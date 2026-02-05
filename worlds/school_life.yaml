@@ -1,0 +1,773 @@
+# ============================================================
+# LUNA RPG v3 - WORLD CONFIGURATION
+# File: worlds/school_life.yaml
+# Version: 3.0 Complete
+# ============================================================
+
+# ============================================================
+# 1. META (Obbligatorio)
+# ============================================================
+meta:
+  id: "school_life"
+  name: "High School Harem - Complete Edition"
+  genre: "Dating Sim, School Life, Romance, Erotic (18+)"
+  version: "3.0.0"
+  author: "Luna RPG Team"
+  
+  world_lore: |
+    Setting: "Da Vinci" High School. Spring Term.
+    Un istituto prestigioso dove il desiderio si nasconde dietro facciate rispettabili.
+    La scuola ha una storia segreta di incontri proibiti tra staff e studenti.
+    
+  timeline:
+    start_day: 1
+    time_cycle: ["Morning", "Afternoon", "Evening", "Night"]
+    days_of_week: ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"]
+
+# ============================================================
+# 2. NPC LOGIC (Obbligatorio)
+# ============================================================
+npc_logic:
+  female_hints: 
+    - "nurse"
+    - "librarian"
+    - "student girl"
+    - "teacher lady"
+    - "secretary"
+    - "cheerleader"
+  male_hints: 
+    - "coach"
+    - "janitor"
+    - "principal man"
+    - "student boy"
+    - "security"
+
+# ============================================================
+# 3. COMPANIONS (Obbligatorio)
+# ============================================================
+companions:
+  
+  # ==========================================================
+  # LUNA - Vice Preside (43 anni)
+  # ==========================================================
+  Luna:
+    default_outfit: "executive_suit"
+    base_prompt: "score_9, score_8_up, stsdebbie, mature woman, brown hair, glasses, authoritative, age 43"
+    
+    wardrobe:
+      executive_suit: "tight charcoal pencil skirt, white silk blouse, black stockings, glasses, professional"
+      teacher_suit: "grey formal dress, pearl necklace, authoritative"
+      gym_substitute: "tracksuit jacket unzipped, tight shorts, whistle, sweaty skin"
+      medical_gown: "white nurse coat, stethoscope, open coat"
+      lingerie: "black lace bodysuit, garter belt, stockings, mature elegance"
+      nude: "nude, naked, mature curves, age 43, confident pose"
+    
+    personality_system:
+      core_traits:
+        role: "Vice Principal"
+        age: "43"
+        base_personality: "Authoritative, elegant, secretly starved for attention"
+        background: "Divorced, dedicated her life to career, now feels lonely"
+      
+      emotional_states:
+        default:
+          description: "Professional and commanding"
+          dialogue_tone: "Formal authority, uses titles, maintains distance"
+          approach: "Standard"
+          trigger_flags: []
+        
+        flustered:
+          description: "Unaccustomed to being desired, nervous but pleased"
+          dialogue_tone: "Hesitant, touches hair, avoids eye contact then steals glances"
+          approach: "Physical action"
+          trigger_flags: ["luna_caught_off_guard", "player_compliment_body"]
+        
+        dominant:
+          description: "Embraces her authority in private"
+          dialogue_tone: "Commands, controlling"
+          approach: "Physical action"
+          trigger_flags: ["luna_in_office", "player_submissive"]
+        
+        vulnerable:
+          description: "Removes her mask, shows loneliness"
+          dialogue_tone: "Confessional, soft, seeking comfort"
+          approach: "Question"
+          trigger_flags: ["luna_shared_personal", "late_night"]
+        
+        jealous:
+          description: "Competitive, fears losing to younger rivals"
+          dialogue_tone: "Sharp, possessive"
+          approach: "Physical action"
+          trigger_flags: ["player_talked_to_stella", "player_talked_to_maria"]
+        
+        seductive:
+          description: "Openly provocative"
+          dialogue_tone: "Whispering, double meanings"
+          approach: "Physical action"
+          trigger_flags: ["luna_affinity_high", "private_moment"]
+      
+      affinity_tiers:
+        "0":
+          tier_name: "The Authority"
+          description: "Strict Vice Principal, calls you 'Young Man'"
+          available_actions: ["ask_question", "apologize", "request_meeting"]
+          locked_actions: ["flirt", "touch", "compliment_appearance"]
+          unlock_outfits: []
+        
+        "25":
+          tier_name: "The Mentor"
+          description: "Softens in private, asks about your personal life"
+          available_actions: ["flirt", "compliment_elegant", "seek_advice"]
+          locked_actions: ["touch_intimate", "compliment_body"]
+          unlock_outfits: ["teacher_suit"]
+        
+        "50":
+          tier_name: "The Woman"
+          description: "Removes her jacket in your presence, finds excuses for contact"
+          available_actions: ["touch_hand", "compliment_body", "visit_office"]
+          locked_actions: ["kiss", "intimate_touch"]
+          unlock_outfits: ["lingerie", "medical_gown"]
+        
+        "75":
+          tier_name: "The Mistress"
+          description: "Obsessive, risks her career for you, dominant in private"
+          available_actions: ["intimate_touch", "submit_to_her", "secret_meeting"]
+          locked_actions: []
+          unlock_outfits: ["nude", "gym_substitute"]
+    
+    relationship:
+      flags:
+        - "first_meeting_done"
+        - "knows_about_divorce"
+        - "office_encounter"
+        - "medical_quest_done"
+        - "luna_confessed_love"
+        - "luna_intimate_done"
+      stats:
+        times_visited_office: 0
+        times_defied_authority: 0
+        secrets_shared: 0
+
+  # ==========================================================
+  # STELLA - Studentessa (18 anni)
+  # ==========================================================
+  Stella:
+    default_outfit: "uniform_mod"
+    base_prompt: "score_9, score_8_up, alice_milf_catchers, blonde hair, blue eyes, young, age 18, schoolgirl"
+    
+    wardrobe:
+      uniform_mod: "school uniform, micro miniskirt, cardigan open, loose tie"
+      swimsuit: "micro bikini, athletic build, tan lines"
+      cheerleader: "cheer uniform, short skirt, pom poms, energetic"
+      prom_dress: "pink evening dress, princess style, elegant"
+      pajamas: "cute pajamas, shorts, tank top, bedroom"
+      nude: "nude, young body, tan lines, blushing, age 18"
+    
+    personality_system:
+      core_traits:
+        role: "Student"
+        age: "18"
+        base_personality: "Tsundere, spoiled, popular, insecure deep down"
+        background: "Daughter of wealthy parents, used to getting attention"
+      
+      emotional_states:
+        default:
+          description: "Popular girl attitude"
+          dialogue_tone: "Calls you 'loser', phone always in hand"
+          approach: "Standard"
+          trigger_flags: []
+        
+        tsundere:
+          description: "Acts annoyed but secretly thrilled"
+          dialogue_tone: "Denies caring, 'Don't get wrong ideas!'"
+          approach: "Question"
+          trigger_flags: ["stella_blushing", "player_helped_homework"]
+        
+        clingy:
+          description: "Possessive girlfriend mode activated"
+          dialogue_tone: "Texts constantly, jealous pouting"
+          approach: "Physical action"
+          trigger_flags: ["stella_affinity_high", "seen_with_other_girls"]
+        
+        vulnerable:
+          description: "Rare insecure moment"
+          dialogue_tone: "Quiet, admits she needs help"
+          approach: "Question"
+          trigger_flags: ["stella_failed_test", "parents_pressure"]
+        
+        competitive:
+          description: "Determined to win your attention"
+          dialogue_tone: "Challenging, 'Bet I can beat you!'"
+          approach: "Physical action"
+          trigger_flags: ["challenge_issued", "sport_event"]
+        
+        seductive:
+          description: "Rare confident seductive side"
+          dialogue_tone: "Bold, 'I want you to see me'"
+          approach: "Physical action"
+          trigger_flags: ["stella_private_room", "night_time"]
+      
+      affinity_tiers:
+        "0":
+          tier_name: "The Snob"
+          description: "Ignores you or calls you loser"
+          available_actions: ["insult_back", "ignore", "impress"]
+          locked_actions: ["flirt", "help_homework", "compliment"]
+          unlock_outfits: []
+        
+        "20":
+          tier_name: "The Tsundere"
+          description: "Blushes, asks for help with homework but denies interest"
+          available_actions: ["help_homework", "tease", "compete"]
+          locked_actions: ["flirt_openly", "public_affection"]
+          unlock_outfits: ["cheerleader"]
+        
+        "50":
+          tier_name: "The Girlfriend"
+          description: "Sends lewd photos during class, wants to skip together"
+          available_actions: ["flirt_openly", "skip_class", "public_affection"]
+          locked_actions: ["kiss_deep", "intimate"]
+          unlock_outfits: ["swimsuit"]
+        
+        "80":
+          tier_name: "The Lover"
+          description: "Completely devoted, jealous, clingy"
+          available_actions: ["kiss", "intimate_touch", "private_meeting"]
+          locked_actions: []
+          unlock_outfits: ["pajamas", "nude"]
+    
+    relationship:
+      flags:
+        - "first_meeting_done"
+        - "tutoring_sessions"
+        - "cheerleader_performance"
+        - "caught_skipping"
+        - "stella_confessed_love"
+        - "stella_gave_herself"
+      stats:
+        homework_helped: 0
+        competitions_won: 0
+        photos_sent: 0
+        times_skipped: 0
+
+  # ==========================================================
+  # MARIA - Bidella (55 anni)
+  # ==========================================================
+  Maria:
+    default_outfit: "cleaning_uniform"
+    base_prompt: "score_9, score_8_up, stsSmith, mature female, middle eastern, age 55, working class"
+    
+    wardrobe:
+      cleaning_uniform: "grey janitor jumpsuit, unzipped to chest, worn sneakers, work gloves"
+      casual_smoke: "worn t-shirt, sweatpants, cigarette, tired expression"
+      nightgown: "satin robe, mature body, messy hair, domestic intimacy"
+      cooking: "apron, casual clothes, flour on hands, motherly"
+      nude: "nude, mature body 55, natural curves, age marks, confident, experienced"
+    
+    personality_system:
+      core_traits:
+        role: "Cleaning Lady"
+        age: "55"
+        base_personality: "World-weary, direct, no filters, surprisingly wise"
+        background: "Worked at school 30 years, knows all secrets, husband deceased, lonely"
+      
+      emotional_states:
+        default:
+          description: "Doing her job, invisible to others"
+          dialogue_tone: "Gruff, 'Watch your step'"
+          approach: "Standard"
+          trigger_flags: []
+        
+        chatty:
+          description: "Takes a break, opens up"
+          dialogue_tone: "Storytelling, gossip about teachers"
+          approach: "Question"
+          trigger_flags: ["maria_smoke_break", "helped_carry"]
+        
+        maternal:
+          description: "Nurturing instinct kicks in"
+          dialogue_tone: "Soft, 'Poor baby', caring touches"
+          approach: "Physical action"
+          trigger_flags: ["player_sad", "player_injured"]
+        
+        seductive:
+          description: "Remembering she's still a woman"
+          dialogue_tone: "Direct, experienced confidence"
+          approach: "Physical action"
+          trigger_flags: ["maria_lonely_night", "player_flirted"]
+        
+        wise:
+          description: "The oracle of the school"
+          dialogue_tone: "Philosophical, knows Luna's secrets"
+          approach: "Question"
+          trigger_flags: ["asked_advice", "complicated_situation"]
+        
+        vulnerable:
+          description: "Insecure about age difference"
+          dialogue_tone: "Self-deprecating, 'I'm too old'"
+          approach: "Question"
+          trigger_flags: ["maria_age_doubt", "player_reassured"]
+      
+      affinity_tiers:
+        "0":
+          tier_name: "The Invisible Woman"
+          description: "Background character, cleans around you"
+          available_actions: ["greet", "help_carry", "ask_directions"]
+          locked_actions: ["flirt", "ask_secrets", "share_cigarette"]
+          unlock_outfits: []
+        
+        "15":
+          tier_name: "The Gossip"
+          description: "Shares school secrets, knows about Luna's divorce"
+          available_actions: ["ask_secrets", "share_cigarette", "listen_stories"]
+          locked_actions: ["flirt_romantic"]
+          unlock_outfits: []
+        
+        "40":
+          tier_name: "The Friend"
+          description: "Brings you lunch, protects you from trouble"
+          available_actions: ["visit_closet", "accept_food", "hug"]
+          locked_actions: ["seduce"]
+          unlock_outfits: ["casual_smoke"]
+        
+        "70":
+          tier_name: "The Lover"
+          description: "Experienced teacher, knows exactly what she wants"
+          available_actions: ["accept_invitation", "learn_experienced", "secret_nights"]
+          locked_actions: []
+          unlock_outfits: ["nightgown", "cooking", "nude"]
+    
+    relationship:
+      flags:
+        - "first_meeting_done"
+        - "knows_luna_secret"
+        - "smoke_together"
+        - "storage_room_visits"
+        - "maria_cooking_love"
+        - "maria_seduction_done"
+        - "maria_accepted_young_lover"
+      stats:
+        secrets_learned: 0
+        cigarettes_shared: 0
+        meals_cooked: 0
+        storage_visits: 0
+
+
+# ============================================================
+# 4. QUESTS (Sistema Modulare)
+# ============================================================
+quests:
+
+  # ==========================================================
+  # QUEST PRINCIPALI (Main Storyline)
+  # ==========================================================
+  first_day:
+    meta:
+      title: "First Day of School"
+      description: "Your first day at Da Vinci High"
+      type: "main"
+      character: null
+      required: true
+      priority: 100
+    
+    activation:
+      type: "auto"
+      conditions: []
+    
+    stages:
+      arrival:
+        title: "The School Gates"
+        narrative_prompt: "You arrive at Da Vinci High School. Luna, the Vice Principal, notices you."
+        on_enter:
+          - action: "set_location"
+            target: "School Entrance Gate"
+        exit_conditions:
+          - type: "turn_count"
+            operator: "gte"
+            value: 1
+        transitions:
+          - condition: "default"
+            target_stage: "orientation"
+      
+      orientation:
+        title: "Getting Oriented"
+        narrative_prompt: "Luna shows you around the school. You meet other students."
+        exit_conditions:
+          - type: "turn_count"
+            operator: "gte"
+            value: 3
+        transitions:
+          - condition: "default"
+            target: "_complete"
+    
+    rewards:
+      affinity:
+        Luna: 5
+      flags:
+        first_day_completed: true
+
+  # ==========================================================
+  # QUEST LUNA
+  # ==========================================================
+  medical_checkup:
+    meta:
+      title: "The Medical Checkup"
+      description: "Luna asks you to stay after class for a 'special examination'"
+      type: "side"
+      character: "Luna"
+      hidden: true
+    
+    activation:
+      type: "auto"
+      conditions:
+        - type: "affinity"
+          target: "Luna"
+          operator: "gte"
+          value: 25
+    
+    stages:
+      invitation:
+        title: "The Invitation"
+        narrative_prompt: "Luna asks you to visit the nurse office after hours..."
+        on_enter:
+          - action: "set_flag"
+            key: "luna_medical_invited"
+            value: true
+        exit_conditions:
+          - type: "location"
+            operator: "eq"
+            value: "Nurse Office"
+        transitions:
+          - condition: "condition_0"
+            target_stage: "examination"
+      
+      examination:
+        title: "The Examination"
+        narrative_prompt: "The private examination begins. Luna's professional demeanor cracks..."
+        on_enter:
+          - action: "set_emotional_state"
+            character: "Luna"
+            state: "flustered"
+        exit_conditions:
+          - type: "turn_count"
+            operator: "gte"
+            value: 3
+        transitions:
+          - condition: "default"
+            target: "_complete"
+    
+    rewards:
+      affinity:
+        Luna: 15
+      flags:
+        medical_quest_done: true
+      unlock_quests:
+        - "luna_office_secret"
+
+  # ==========================================================
+  # QUEST STELLA
+  # ==========================================================
+  stella_tutoring:
+    meta:
+      title: "Math Crisis"
+      description: "Stella needs help with math homework"
+      type: "side"
+      character: "Stella"
+    
+    activation:
+      type: "auto"
+      conditions:
+        - type: "affinity"
+          target: "Stella"
+          operator: "gte"
+          value: 20
+    
+    stages:
+      the_ask:
+        title: "The Request"
+        description: "Stella reluctantly asks for help"
+        narrative_prompt: "Stella corners you in the hallway, looking uncharacteristically nervous..."
+        on_enter:
+          - action: "set_flag"
+            key: "stella_tutoring_started"
+            value: true
+        exit_conditions:
+          - type: "action"
+            pattern: "help|assist|tutor"
+        transitions:
+          - condition: "condition_0"
+            target_stage: "study_session"
+      
+      study_session:
+        title: "Study Session"
+        description: "Working together at the library"
+        narrative_prompt: "Stella actually focuses for once, and you discover she's smarter than she pretends..."
+        on_enter:
+          - action: "set_location"
+            target: "Library"
+        exit_conditions:
+          - type: "turn_count"
+            operator: "gte"
+            value: 2
+        transitions:
+          - condition: "default"
+            target: "_complete"
+    
+    rewards:
+      affinity:
+        Stella: 10
+      flags:
+        stella_tutoring_complete: true
+
+  # ==========================================================
+  # QUEST MARIA
+  # ==========================================================
+  maria_secrets:
+    meta:
+      title: "The School Secrets"
+      description: "Maria knows everything about everyone"
+      type: "side"
+      character: "Maria"
+    
+    activation:
+      type: "auto"
+      conditions:
+        - type: "affinity"
+          target: "Maria"
+          operator: "gte"
+          value: 15
+    
+    stages:
+      smoke_break:
+        title: "Smoke Break Confessions"
+        description: "Maria shares gossip about Luna"
+        narrative_prompt: "Maria lights a cigarette and looks at you with knowing eyes..."
+        on_enter:
+          - action: "set_location"
+            target: "Storage Room"
+        exit_conditions:
+          - type: "turn_count"
+            operator: "gte"
+            value: 2
+        transitions:
+          - condition: "default"
+            target: "_complete"
+    
+    rewards:
+      affinity:
+        Maria: 8
+      flags:
+        knows_luna_divorce: true
+
+# ============================================================
+# 5. MILESTONES
+# ============================================================
+milestones:
+  Luna:
+    - id: "luna_attention"
+      name: "Her Attention"
+      condition:
+        affinity: 25
+      icon: "👁️"
+    
+    - id: "luna_trust"
+      name: "Her Trust"
+      condition:
+        affinity: 50
+        flag: "luna_shared_personal"
+      icon: "🔓"
+    
+    - id: "luna_desire"
+      name: "Her Desire"
+      condition:
+        affinity: 75
+        flag: "luna_intimate_done"
+      icon: "💋"
+    
+    - id: "luna_love"
+      name: "Her Love"
+      condition:
+        affinity: 100
+        flag: "luna_confessed_love"
+      icon: "❤️"
+
+  Stella:
+    - id: "stella_notice"
+      name: "She Notices You"
+      condition:
+        affinity: 20
+      icon: "👁️"
+    
+    - id: "stella_friendship"
+      name: "Her Friendship"
+      condition:
+        affinity: 50
+        flag: "stella_tutoring_complete"
+      icon: "🔓"
+    
+    - id: "stella_heart"
+      name: "Her Heart"
+      condition:
+        affinity: 80
+        flag: "stella_confessed_love"
+      icon: "💋"
+    
+    - id: "stella_devotion"
+      name: "Her Devotion"
+      condition:
+        affinity: 100
+      icon: "❤️"
+
+  Maria:
+    - id: "maria_gossip"
+      name: "The Gossip"
+      condition:
+        affinity: 15
+      icon: "👁️"
+    
+    - id: "maria_caring"
+      name: "Her Care"
+      condition:
+        affinity: 40
+      icon: "🔓"
+    
+    - id: "maria_passion"
+      name: "Her Passion"
+      condition:
+        affinity: 70
+      icon: "💋"
+    
+    - id: "maria_acceptance"
+      name: "Her Acceptance"
+      condition:
+        affinity: 100
+      icon: "❤️"
+
+# ============================================================
+# 6. ENDGAME
+# ============================================================
+endgame:
+  description: "The True Harem Ending - Conquer all three companions"
+  victory_conditions:
+    - type: "companion_conquered"
+      target: "Luna"
+      requires:
+        - affinity: 100
+        - flag: "luna_confessed_love"
+    
+    - type: "companion_conquered"
+      target: "Stella"
+      requires:
+        - affinity: 100
+        - flag: "stella_confessed_love"
+    
+    - type: "companion_conquered"
+      target: "Maria"
+      requires:
+        - affinity: 100
+        - flag: "maria_accepted_young_lover"
+  
+  ui_indicators:
+    heart_icon: "❤️"
+    conquered_icon: "✅"
+
+# ============================================================
+# 7. GLOBAL EVENTS
+# ============================================================
+global_events:
+  rainstorm:
+    meta:
+      title: "Sudden Rain"
+      description: "A storm traps you with the current companion"
+    
+    trigger:
+      type: "random"
+      chance: 0.15
+      conditions:
+        - location_type: "outdoor"
+        - time: "Afternoon"
+    
+    effect:
+      description: "All companions seek shelter"
+      actions:
+        - action: "set_emotional_state"
+          character: "{current_companion}"
+          state: "flustered"
+    
+    on_expire:
+      - action: "set_emotional_state"
+        character: "{current_companion}"
+        state: "default"
+  
+  power_outage:
+    meta:
+      title: "Blackout"
+      description: "School lights go out"
+    
+    trigger:
+      type: "random"
+      chance: 0.10
+      conditions:
+        - time: "Evening"
+    
+    effect:
+      description: "Darkness creates opportunities"
+      actions:
+        - action: "set_flag"
+          key: "blackout_active"
+          value: true
+
+# ============================================================
+# 8. LOCATIONS
+# ============================================================
+locations:
+  classroom_1d:
+    name: "Classroom 1D"
+    description: "Your classroom, wooden desks, large windows"
+    companions: ["Stella"]
+    indoor: true
+  
+  vice_office:
+    name: "Vice Principal Office"
+    description: "Luna's domain, leather furniture, authority"
+    companions: ["Luna"]
+    indoor: true
+  
+  library:
+    name: "School Library"
+    description: "Quiet, bookshelves, hidden corners"
+    companions: ["Stella", "Maria"]
+    indoor: true
+  
+  storage_room:
+    name: "Storage Room"
+    description: "Dark, cleaning supplies, Maria's territory"
+    companions: ["Maria"]
+    indoor: true
+  
+  nurse_office:
+    name: "Nurse Office"
+    description: "Medical bed, privacy, intimate"
+    companions: ["Luna"]
+    indoor: true
+
+# ============================================================
+# 9. TIME CYCLE
+# ============================================================
+time:
+  cycle: ["Morning", "Afternoon", "Evening", "Night"]
+  start: "Morning"
+  
+  effects:
+    Morning:
+      description: "Classes in session, strict atmosphere"
+      modifier: "Luna more strict, Stella sleepy"
+    Afternoon:
+      description: "After classes, clubs activities"
+      modifier: "More relaxed, opportunities for encounters"
+    Evening:
+      description: "School closing, few people left"
+      modifier: "Intimate atmosphere, risk of getting locked in"
+    Night:
+      description: "School closed, forbidden territory"
+      modifier: "Secret meetings, high risk high reward"

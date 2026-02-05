@@ -1,0 +1,65 @@
+[build-system]
+requires = ["setuptools>=61.0", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "luna-rpg-v3"
+version = "3.0.0"
+description = "Luna RPG v3 - Modern AI-Driven Visual Novel"
+requires-python = ">=3.11"
+dependencies = [
+    # Core
+    "pydantic>=2.0",
+    "pydantic-settings>=2.0",
+    "sqlalchemy>=2.0",
+    "aiosqlite>=0.19",
+    "aiofiles>=23.0",
+    
+    # AI/ML
+    "google-genai>=0.3",
+    "google-cloud-texttospeech>=2.0",
+    
+    # HTTP/Async
+    "httpx>=0.25",
+    "aiohttp>=3.9",
+    "websockets>=12.0",
+    
+    # UI
+    "pyside6>=6.6",
+    "qasync>=0.27",
+    
+    # Config/Data
+    "pyyaml>=6.0",
+    "python-dotenv>=1.0",
+    
+    # Media
+    "pillow>=10.0",
+    "pygame>=2.5",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=7.0",
+    "pytest-asyncio>=0.21",
+    "pytest-qt>=4.0",
+    "mypy>=1.0",
+    "ruff>=0.1",
+]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+asyncio_mode = "auto"
+qt_api = "pyside6"
+
+[tool.mypy]
+python_version = "3.11"
+strict = true
+warn_return_any = true
+warn_unused_configs = true
+
+[tool.setuptools]
+packages = ["core", "ui", "media", "tools", "tests"]
+
+[tool.ruff]
+line-length = 100
+target-version = "py311"

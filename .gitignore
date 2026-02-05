@@ -1,0 +1,58 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+.venv/
+venv/
+ENV/
+env/
+
+# Generated content (large files)
+storage/videos/*.mp4
+storage/videos/*.mov
+storage/videos/*.webm
+storage/videos/*.gif
+storage/images/*.png
+storage/images/*.jpg
+storage/audio/*.mp3
+storage/audio/*.wav
+
+# User preferences (auto-generated)
+storage/config/user_prefs.json
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+logs/
+
+# Temp files
+*.tmp
+*.bak
+
+# Secrets & Credentials (NEVER commit these!)
+.env
+google_credentials.json
+*.key
+*.pem
+
+# Large archive files
+*.rar
+*.zip
+*.tar.gz
+
+# Database files (user data)
+storage/saves/*.db
+storage/saves/*.sqlite
+storage/saves/*.sqlite3
