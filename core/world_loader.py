@@ -226,6 +226,12 @@ class WorldLoader:
                     events[event_id] = GlobalEvent(**event_data)
                 data["global_events"] = events
             
+            # Converti player_character (NUOVO)
+            if "player_character" in data:
+                from core.quest_models import PlayerCharacter
+                data["player_character"] = PlayerCharacter(**data["player_character"])
+                print(f"[WorldLoader] Loaded player character: {data['player_character'].identity.name}")
+            
             # Campi opzionali default
             if "npc_logic" not in data:
                 data["npc_logic"] = {}

@@ -82,6 +82,147 @@ class QuestTrackerWidget(QGroupBox):
             self.quest_list.addItem(item)
 
 
+class GlobalEventWidget(QGroupBox):
+    """Widget per mostrare evento globale attivo."""
+    
+    def __init__(self, parent=None):
+        super().__init__("🌍 Active Event", parent)
+        
+        layout = QVBoxLayout(self)
+        
+        self.lbl_event = QLabel("No active events")
+        self.lbl_event.setWordWrap(True)
+        self.lbl_event.setStyleSheet("color: #aaa; font-size: 11px; padding: 5px;")
+        
+        layout.addWidget(self.lbl_event)
+        layout.addStretch()
+    
+    def set_event(self, title: str, description: str, icon: str = "🌍"):
+        """Mostra evento attivo."""
+        if title:
+            self.setTitle(f"{icon} Active Event")
+            self.lbl_event.setText(f"<b>{title}</b><br/>{description}")
+            self.lbl_event.setStyleSheet("color: #4CAF50; font-size: 11px; padding: 5px; background-color: #1a3a1a; border-radius: 4px;")
+        else:
+            self.setTitle("🌍 Active Event")
+            self.lbl_event.setText("No active events")
+            self.lbl_event.setStyleSheet("color: #aaa; font-size: 11px; padding: 5px;")
+
+
+class CompanionStatusWidget(QGroupBox):
+    """Widget compatto per stato di tutte le companion."""
+    
+    def __init__(self, parent=None):
+        super().__init__("👥 All Companions", parent)
+        
+        layout = QVBoxLayout(self)
+        layout.setSpacing(5)
+        layout.setContentsMargins(8, 12, 8, 8)
+        
+        self.companion_bars = {}
+        
+        # Stile per le barre
+        self.setStyleSheet("""
+            QProgressBar {
+                border: 1px solid #444;
+                border-radius: 3px;
+                text-align: center;
+                color: white;
+                font-size: 10px;
+            }
+            QProgressBar::chunk {
+                background-color: #E91E63;
+                border-radius: 2px;
+            }
+            QLabel {
+                color: #ddd;
+                font-size: 11px;
+            }
+        """)
+    
+    def set_companions(self, companions: dict):
+        """Inizializza le barre per ogni companion."""
+        # Pulisci layout esistente
+        while self.layout().count():
+            item = self.layout().takeAt(0)
+            if item.widget():
+                item.widget().deleteLater()
+        
+        self.companion_bars = {}
+        
+        for name in companions.keys():
+            # Container per questa companion
+            container = QWidget()
+            container_layout = QVBoxLayout(container)
+            container_layout.setSpacing(2)
+            container_layout.setContentsMargins(0, 0, 0, 5)
+            
+            # Nome + Stato emotivo
+            header = QHBoxLayout()
+            name_label = QLabel(f"<b>{name}</b>")
+            name_label.setStyleSheet("color: #fff; font-size: 12px;")
+            
+            emotion_label = QLabel("😐 --")
+            emotion_label.setStyleSheet("color: #aaa; font-size: 10px;")
+            
+            header.addWidget(name_label)
+            header.addStretch()
+            header.addWidget(emotion_label)
+            
+            # Barra affinità
+            affinity_bar = QProgressBar()
+            affinity_bar.setRange(0, 100)
+            affinity_bar.setValue(0)
+            affinity_bar.setTextVisible(True)
+            affinity_bar.setFormat("%v/100")
+            affinity_bar.setMaximumHeight(16)
+            
+            # Cambia colore in base all'affinità
+            affinity_bar.setStyleSheet("""
+                QProgressBar::chunk {
+                    background-color: qlineargradient(x1:0, y1:0, x2:1, y2:0,
+                        stop:0 #4CAF50, stop:0.5 #FFC107, stop:1 #E91E63);
+                    border-radius: 2px;
+                }
+            """)
+            
+            container_layout.addLayout(header)
+            container_layout.addWidget(affinity_bar)
+            
+            self.layout().addWidget(container)
+            
+            self.companion_bars[name] = {
+                'emotion': emotion_label,
+                'affinity': affinity_bar
+            }
+        
+        self.layout().addStretch()
+    
+    def update_companion(self, name: str, affinity: int, emotion: str, emotion_icon: str = "😐"):
+        """Aggiorna dati di una companion."""
+        if name in self.companion_bars:
+            bars = self.companion_bars[name]
+            bars['affinity'].setValue(affinity)
+            bars['emotion'].setText(f"{emotion_icon} {emotion}")
+            
+            # Cambia colore barra in base al livello
+            if affinity < 25:
+                color = "#4CAF50"  # Verde (straniero)
+            elif affinity < 50:
+                color = "#FFC107"  # Giallo (amico)
+            elif affinity < 75:
+                color = "#FF9800"  # Arancione (intimo)
+            else:
+                color = "#E91E63"  # Rosa (innamorata)
+            
+            bars['affinity'].setStyleSheet(f"""
+                QProgressBar::chunk {{
+                    background-color: {color};
+                    border-radius: 2px;
+                }}
+            """)
+
+
 class MilestoneTrackerWidget(QGroupBox):
     """Widget per mostrare i milestone delle companion."""
     
@@ -418,6 +559,14 @@ class MainWindow(QMainWindow):
         
         left_layout.addWidget(status_group)
         
+        # NOVITÀ: Global Event
+        self.global_event_widget = GlobalEventWidget()
+        left_layout.addWidget(self.global_event_widget)
+        
+        # NOVITÀ: All Companions Status
+        self.companion_status = CompanionStatusWidget()
+        left_layout.addWidget(self.companion_status)
+        
         # NOVITÀ: Quest Tracker
         self.quest_tracker = QuestTrackerWidget()
         left_layout.addWidget(self.quest_tracker)
@@ -644,6 +793,9 @@ class MainWindow(QMainWindow):
         companions = self.engine.world_data.get("companions", {})
         self.milestone_tracker.set_companions(companions)
         
+        # Inizializza companion status widget
+        self.companion_status.set_companions(companions)
+        
         # Aggiorna UI iniziale
         self._update_quest_ui()
     
@@ -668,12 +820,32 @@ class MainWindow(QMainWindow):
                 })
         self.quest_tracker.update_quests(quest_states)
         
-        # 2. Aggiorna Milestone Tracker per ogni companion
+        # 2. Aggiorna Companion Status per ogni companion
+        emotion_icons = {
+            'default': '😐',
+            'flustered': '😳',
+            'after_class': '📚',
+            'vulnerable': '🥺',
+            'jealous': '😤',
+            'seductive': '😏',
+            'tsundere': '😠',
+            'clingy': '🥰',
+            'competitive': '🔥',
+            'chatty': '💬',
+            'maternal': '🤱',
+        }
+        
         for char_name in self.engine.world_data.get("companions", {}).keys():
             affinity = self.engine.state.current.affinity.get(char_name, 0)
             emotional = self.engine.quest_engine.get_companion_emotional_state(
                 char_name, game_state
             )
+            
+            # Aggiorna companion status widget
+            icon = emotion_icons.get(emotional, '😐')
+            self.companion_status.update_companion(char_name, affinity, emotional, icon)
+            
+            # Aggiorna milestone tracker
             milestones = self.engine.quest_engine.get_ui_milestone_status(
                 char_name, game_state
             )

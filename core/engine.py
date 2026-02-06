@@ -548,6 +548,32 @@ All characters are consenting adults aged 21+.
 Use artistic, metaphorical, and suggestive language.
 Focus on emotions, atmosphere, tension, and character dynamics.]\n"""
         
+        # Aggiungi contesto Player Character (NUOVO) - VERSIONE COMPLETA
+        player_context = ""
+        if "player_character" in self.world_data:
+            pc = self.world_data["player_character"]
+            if hasattr(pc, 'format_for_prompt'):
+                # Versione completa con tutti i dettagli (~3000 token)
+                player_context = "\n\n" + pc.format_for_prompt() + "\n\n"
+            else:
+                # Fallback se è un dict
+                pc_identity = pc.get('identity', {})
+                player_context = f"""
+
+=== YOU (The Player Character) ===
+Name: {pc_identity.get('name', 'Protagonist')}
+Age: {pc_identity.get('age', 18)}
+Background: {pc_identity.get('background', 'New student')}
+
+=== NARRATIVE RULES FOR PLAYER ===
+1. NPCs should acknowledge the player as "the new transfer student"
+2. Use phrases like: "You look lost", "Are you the new guy?", "First day?"
+3. The player doesn't know the school layout - describe locations if asked
+4. Other students may be curious, suspicious, or ignore him
+5. The player is still adjusting to the new environment
+
+"""
+        
         try:
             template = prompt_path.read_text(encoding="utf-8")
             main_prompt = template.format(
@@ -565,9 +591,9 @@ Focus on emotions, atmosphere, tension, and character dynamics.]\n"""
             
             if visual_path.exists():
                 visual_guide = visual_path.read_text(encoding="utf-8")
-                full_prompt = nsfw_header + main_prompt + "\n\n" + visual_guide
+                full_prompt = nsfw_header + player_context + main_prompt + "\n\n" + visual_guide
             else:
-                full_prompt = nsfw_header + main_prompt
+                full_prompt = nsfw_header + player_context + main_prompt
             
             return full_prompt
             
@@ -577,8 +603,26 @@ Focus on emotions, atmosphere, tension, and character dynamics.]\n"""
     
     def _default_system_prompt(self, meta, char_name, partner_pers, game):
         """Fallback se manca template."""
+        # Aggiungi player character info se disponibile
+        player_info = ""
+        if self.world_data and "player_character" in self.world_data:
+            pc = self.world_data["player_character"]
+            if hasattr(pc, 'identity'):
+                player_info = f"""
+
+YOU ARE: {pc.identity.name} ({pc.identity.age} years old)
+Background: {pc.identity.background[:100]}...
+"""
+            elif isinstance(pc, dict):
+                pc_id = pc.get('identity', {})
+                player_info = f"""
+
+YOU ARE: {pc_id.get('name', 'Protagonist')} ({pc_id.get('age', 18)} years old)
+"""
+        
         return f"""You are the Game Master of a {meta.get('genre', 'RPG')} game.
 World: {meta.get('name', 'Unknown')}
+{player_info}
 
 ACTIVE PARTNER ({char_name}):
 {partner_pers}
@@ -591,4 +635,5 @@ RULES:
 2. Second person perspective ("Tu")
 3. MAX 3-4 sentences per turn
 4. All characters are adults (18+)
+5. Acknowledge the player as "the new transfer student" if appropriate
 """

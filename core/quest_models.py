@@ -198,3 +198,129 @@ class WorldConfigV3(BaseModel):
 
 # Ricostruisci i modelli che hanno forward references
 CompanionV3Config.model_rebuild()
+
+
+class PlayerCharacterIdentity(BaseModel):
+    """Identità del protagonista."""
+    name: str = "Protagonist"
+    age: int = 18
+    gender: str = "male"
+    background: str = ""
+
+
+class PlayerCharacterSituation(BaseModel):
+    """Situazione iniziale del protagonista."""
+    location: str = "Unknown"
+    time: str = "Morning"
+    context: str = ""
+
+
+class PlayerCharacterRelationships(BaseModel):
+    """Stato relazionale iniziale."""
+    default_affinity: int = 0
+    reputation: str = "unknown"
+    known_characters: List[str] = Field(default_factory=list)
+
+
+class PlayerCharacterTarget(BaseModel):
+    """Target da conquistare (companion)."""
+    name: str
+    role: str
+    age: int
+    appeal: str
+    challenge: str
+    first_meeting: str
+
+
+class PlayerCharacterObjective(BaseModel):
+    """Obiettivo principale del gioco."""
+    title: str
+    description: str
+
+
+class PlayerCharacter(BaseModel):
+    """Configurazione completa del protagonista (Player Character)."""
+    identity: PlayerCharacterIdentity = Field(default_factory=PlayerCharacterIdentity)
+    main_objective: Optional[PlayerCharacterObjective] = None
+    targets: List[PlayerCharacterTarget] = Field(default_factory=list)
+    starting_situation: PlayerCharacterSituation = Field(default_factory=PlayerCharacterSituation)
+    relationships_start: PlayerCharacterRelationships = Field(default_factory=PlayerCharacterRelationships)
+    implicit_goals: List[str] = Field(default_factory=list)
+    constraints: List[str] = Field(default_factory=list)
+    personality_hints: Dict[str, Any] = Field(default_factory=dict)
+    
+    def format_for_prompt(self) -> str:
+        """Formatta il contesto completo per il system prompt."""
+        lines = [
+            "=== YOU (The Player Character) ===",
+            f"Name: {self.identity.name}",
+            f"Age: {self.identity.age}",
+            f"Background: {self.identity.background}",
+            "",
+        ]
+        
+        # Obiettivo principale
+        if self.main_objective:
+            lines.extend([
+                "=== YOUR MISSION ===",
+                f"Title: {self.main_objective.title}",
+                f"Objective: {self.main_objective.description}",
+                "",
+            ])
+        
+        # Targets da conquistare - DETTAGLIATI
+        if self.targets:
+            lines.append("=== YOUR TARGETS (Conquer Them All) ===")
+            for target in self.targets:
+                lines.extend([
+                    f"\n【{target.name}】",
+                    f"  Role: {target.role} ({target.age} years old)",
+                    f"  Appeal: {target.appeal}",
+                    f"  Challenge: {target.challenge}",
+                    f"  First Meeting: {target.first_meeting}",
+                ])
+            lines.append("")
+        
+        lines.extend([
+            "=== CURRENT SITUATION ===",
+            f"Location: {self.starting_situation.location}",
+            f"Time: {self.starting_situation.time}",
+            f"Context: {self.starting_situation.context}",
+            "",
+            "=== RELATIONSHIPS ===",
+            f"Reputation: {self.relationships_start.reputation}",
+            f"Known characters: {', '.join(self.relationships_start.known_characters) if self.relationships_start.known_characters else 'None (you know no one yet)'}",
+            "",
+            "=== YOUR GOALS ===",
+        ])
+        for goal in self.implicit_goals:
+            lines.append(f"- {goal}")
+        
+        lines.append("")
+        lines.append("=== CONSTRAINTS (Things you cannot do yet) ===")
+        for constraint in self.constraints:
+            lines.append(f"- {constraint}")
+        
+        if self.personality_hints:
+            lines.append("")
+            lines.append("=== PERSONALITY ===")
+            if "default_tone" in self.personality_hints:
+                lines.append(f"Default tone: {self.personality_hints['default_tone']}")
+            if "archetype" in self.personality_hints:
+                lines.append(f"Archetype: {self.personality_hints['archetype']}")
+            if "approach_style" in self.personality_hints:
+                lines.append(f"Approach: {self.personality_hints['approach_style']}")
+        
+        # Istruzioni narrative per l'LLM
+        lines.extend([
+            "",
+            "=== NARRATIVE INSTRUCTIONS FOR AI ===",
+            "1. The player is a transfer student on his FIRST DAY.",
+            "2. He must SEDUCE all three targets (Luna, Stella, Maria).",
+            "3. Each target requires different approach strategies.",
+            "4. NPCs should react to him as 'the new mysterious guy'.",
+            "5. Build tension and romantic/sexual chemistry gradually.",
+            "6. Use Italian language, second person ('Tu').",
+        ])
+        
+        return "\n".join(lines)

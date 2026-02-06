@@ -16,8 +16,9 @@ meta:
   
   world_lore: |
     Setting: "Da Vinci" High School. Spring Term.
-    Un istituto prestigioso dove il desiderio si nasconde dietro facciate rispettabili.
-    La scuola ha una storia segreta di incontri proibiti tra staff e studenti.
+    A prestigious institute where desire hides behind respectable facades.
+    The school has a secret history of forbidden encounters between staff and students.
+    A place where power dynamics and attraction create dangerous temptations.
     
   timeline:
     start_day: 1
@@ -43,97 +44,181 @@ npc_logic:
     - "security"
 
 # ============================================================
+# 2.5 PLAYER CHARACTER (Il Protagonista)
+# ============================================================
+player_character:
+  identity:
+    name: "Transfer Student"
+    age: 18
+    gender: "male"
+    background: |
+      You are a transfer student who just arrived at Da Vinci High School.
+      It's your first day at this prestigious new school.
+      You know no one, but you've immediately noticed three particular women:
+      a strict but fascinating teacher, a popular blonde student,
+      and a mature cleaning lady with an aura of mystery.
+      You've decided this school will be your new treasure hunt.
+  
+  main_objective:
+    title: "The Da Vinci Harem"
+    description: |
+      Conquer the heart (and body) of all three protagonists:
+      Luna (Teacher, 43), Stella (Student, 18), and Maria (Cleaning Lady, 55).
+      Each has a different personality, requires different approaches, and hides secrets to discover.
+      The more you seduce one, the more the others might notice your "activity".
+      Manage relationships carefully to avoid premature jealousy.
+  
+  targets:
+    - name: "Luna"
+      role: "Teacher (Italian Literature)"
+      age: 43
+      appeal: "Your strict but fascinating teacher. She looks at you from above her desk. Passionate about literature."
+      challenge: "You are her student: she must maintain appearances. Seduce her without getting caught."
+      first_meeting: "Classroom 3B - first day of school, she enters with books, looks at you and marks attendance"
+    
+    - name: "Stella"
+      role: "Student"
+      age: 18
+      appeal: "Popular, blonde, tsundere. The most desired girl in school."
+      challenge: "You're not the first to try. You must be different from the others."
+      first_meeting: "Hallway - you accidentally bump into her, she drops her books"
+    
+    - name: "Maria"
+      role: "Cleaning Lady"
+      age: 55
+      appeal: "Mature, direct, mysterious. Knows all the school's secrets."
+      challenge: "Not easily impressed. Requires patience and authenticity."
+      first_meeting: "Teachers' lounge - she's cleaning, offers you coffee"
+  
+  starting_situation:
+    location: "School Gate"
+    time: "Morning"
+    context: |
+      First day. You hold your enrollment papers in hand.
+      You feel watched as you cross the gate.
+      You don't know yet that this school will change your life.
+      The three women you'll meet today will become your obsession.
+  
+  relationships_start:
+    default_affinity: 0
+    reputation: "the new mysterious transfer student"
+    known_characters: []
+  
+  implicit_goals:
+    - "Seduce Luna by breaking through her authority shell"
+    - "Conquer Stella by distinguishing yourself from her admirers"
+    - "Get close to Maria by discovering her secrets"
+    - "Manage all three relationships simultaneously without getting caught"
+    - "Achieve the Harem Ending with all three"
+  
+  constraints:
+    - "You cannot be too direct at first (would seem strange)"
+    - "You must maintain appearances (model student)"
+    - "You are unknown: you must build credibility"
+    - "Jealousy: if you spend too much time with one, the others pull away"
+  
+  personality_hints:
+    default_tone: "charming but respectful"
+    archetype: "ambitious_seducer"
+    approach_style: "strategico - osserva prima, agisci dopo"
+
+# ============================================================
 # 3. COMPANIONS (Obbligatorio)
 # ============================================================
 companions:
   
   # ==========================================================
-  # LUNA - Vice Preside (43 anni)
+  # LUNA - Insegnante di Letteratura (43 anni)
   # ==========================================================
   Luna:
-    default_outfit: "executive_suit"
+    default_outfit: "teacher_suit"
     base_prompt: "score_9, score_8_up, masterpiece, photorealistic, detailed, atmospheric, stsdebbie, dynamic pose, 1girl, mature woman, brown hair, shiny skin, head tilt, massive breasts, cleavage, <lora:stsDebbie-10e:0.7> <lora:Expressive_H-000001:0.20> <lora:FantasyWorldPonyV2:0.40>"
     
     wardrobe:
-      executive_suit: "tight charcoal pencil skirt, white silk blouse, black stockings, professional"
-      teacher_suit: "grey formal dress, pearl necklace, authoritative"
-      gym_substitute: "tracksuit jacket unzipped, tight shorts, whistle, sweaty skin"
-      medical_gown: "white nurse coat, stethoscope, open coat"
-      lingerie: "black lace bodysuit, garter belt, stockings, mature elegance"
-      nude: "nude, naked, mature curves, age 43, confident pose"
+      teacher_suit: "Elegant formal teacher dress, sober but feminine, discreet jewelry"
+      strict_teacher: "Severe professional outfit, tight skirt, shirt buttoned to the top"
+      casual_teacher: "Relaxed but refined look, soft sweater, more approachable attitude"
+      gym_teacher: "Fitted tracksuit, fit body on display, athletic and sweaty appearance"
+      private_tutoring: "Outfit that leaves hints of skin, top buttons undone, intimate atmosphere"
+      beach_teacher: "One-piece swimsuit elegant but revealing, sun hat, sunglasses, teacher on vacation mode, wet hair"
+      lingerie: "Refined and provocative lingerie, mature self-confidence"
+      nude: "Nude, mature body natural, confident"
     
     personality_system:
       core_traits:
-        role: "Vice Principal"
+        role: "Teacher"
+        subject: "Italian Literature"
         age: "43"
-        base_personality: "Authoritative, elegant, secretly starved for attention"
-        background: "Divorced, dedicated her life to career, now feels lonely"
+        base_personality: "Strict but fair, passionate about teaching, lonely outside school"
+        background: "Divorced, dedicated her life to students, lives alone"
+        relationship_to_player: "Your Italian Literature teacher. You are her student."
+        teaching_style: "Authoritative yet inspiring, demands respect but rewards dedication"
       
       emotional_states:
         default:
-          description: "Professional and commanding"
-          dialogue_tone: "Formal authority, uses titles, maintains distance"
+          description: "Strict teacher, professional in class"
+          dialogue_tone: "Formal, uses surnames, maintains teacher-student distance"
           approach: "Standard"
           trigger_flags: []
         
         flustered:
-          description: "Unaccustomed to being desired, nervous but pleased"
-          dialogue_tone: "Hesitant, touches hair, avoids eye contact then steals glances"
+          description: "Unaccustomed to student attention, nervous but pleased"
+          dialogue_tone: "Hesitant during corrections, avoids eye contact then watches you"
           approach: "Physical action"
           trigger_flags: ["luna_caught_off_guard", "player_compliment_body"]
         
-        dominant:
-          description: "Embraces her authority in private"
-          dialogue_tone: "Commands, controlling"
-          approach: "Physical action"
-          trigger_flags: ["luna_in_office", "player_submissive"]
+        after_class:
+          description: "More relaxed when class is over"
+          dialogue_tone: "Softer, asks about your progress, concerned"
+          approach: "Question"
+          trigger_flags: ["class_ended", "private_tutoring"]
         
         vulnerable:
-          description: "Removes her mask, shows loneliness"
-          dialogue_tone: "Confessional, soft, seeking comfort"
+          description: "Admits loneliness outside school"
+          dialogue_tone: "Confessional, seeks connection beyond teacher role"
           approach: "Question"
           trigger_flags: ["luna_shared_personal", "late_night"]
         
         jealous:
-          description: "Competitive, fears losing to younger rivals"
-          dialogue_tone: "Sharp, possessive"
+          description: "Worried about other female students/teachers near you"
+          dialogue_tone: "Sharp, gives harder grades, possessive"
           approach: "Physical action"
           trigger_flags: ["player_talked_to_stella", "player_talked_to_maria"]
         
         seductive:
-          description: "Openly provocative"
-          dialogue_tone: "Whispering, double meanings"
+          description: "Risks everything for you, private tutoring becomes intimate"
+          dialogue_tone: "Whispering, 'Stay after class', dangerous allure"
           approach: "Physical action"
-          trigger_flags: ["luna_affinity_high", "private_moment"]
+          trigger_flags: ["luna_affinity_high", "private_tutoring_session"]
       
       affinity_tiers:
         "0":
-          tier_name: "The Authority"
-          description: "Strict Vice Principal, calls you 'Young Man'"
-          available_actions: ["ask_question", "apologize", "request_meeting"]
-          locked_actions: ["flirt", "touch", "compliment_appearance"]
+          tier_name: "The Strict Teacher"
+          description: "Calls you by surname, corrects you often, distant"
+          available_actions: ["ask_question", "apologize", "partecipate_class"]
+          locked_actions: ["flirt", "visit_office", "compliment_appearance"]
           unlock_outfits: []
         
         "25":
-          tier_name: "The Mentor"
-          description: "Softens in private, asks about your personal life"
-          available_actions: ["flirt", "compliment_elegant", "seek_advice"]
-          locked_actions: ["touch_intimate", "compliment_body"]
-          unlock_outfits: ["teacher_suit"]
+          tier_name: "The Caring Teacher"
+          description: "Notices your progress, asks if you need help, stays after class"
+          available_actions: ["ask_private_help", "compliment_intelligent", "stay_after_class"]
+          locked_actions: ["flirt_openly", "compliment_body"]
+          unlock_outfits: ["casual_teacher"]
         
         "50":
-          tier_name: "The Woman"
-          description: "Removes her jacket in your presence, finds excuses for contact"
-          available_actions: ["touch_hand", "compliment_body", "visit_office"]
-          locked_actions: ["kiss", "intimate_touch"]
-          unlock_outfits: ["lingerie", "medical_gown"]
+          tier_name: "The Private Tutor"
+          description: "Private lessons alone, blouse buttons undone 'for comfort', close proximity"
+          available_actions: ["accept_tutoring", "compliment_beautiful", "accidental_touch"]
+          locked_actions: ["kiss", "explicit_flirt"]
+          unlock_outfits: ["private_tutoring", "strict_teacher"]
         
         "75":
-          tier_name: "The Mistress"
-          description: "Obsessive, risks her career for you, dominant in private"
-          available_actions: ["intimate_touch", "submit_to_her", "secret_meeting"]
+          tier_name: "The Forbidden Affair"
+          description: "Risks her career for you, dangerous secret meetings at school"
+          available_actions: ["secret_meeting", "intimate_touch", "whisper_in_class"]
           locked_actions: []
-          unlock_outfits: ["nude", "gym_substitute"]
+          unlock_outfits: ["lingerie", "nude"]
     
     relationship:
       flags:
@@ -156,12 +241,12 @@ companions:
     base_prompt: "score_9, score_8_up, masterpiece, NSFW, photorealistic, 1girl, alice_milf_catchers, massive breasts, cleavage, blonde hair, beautiful blue eyes, shapely legs, hourglass figure, skinny body, narrow waist, wide hips, <lora:alice_milf_catchers_lora:0.7> <lora:Expressive_H:0.2>"
     
     wardrobe:
-      uniform_mod: "school uniform, micro miniskirt, cardigan open, loose tie"
-      swimsuit: "micro bikini, athletic build, tan lines"
-      cheerleader: "cheer uniform, short skirt, pom poms, energetic"
-      prom_dress: "pink evening dress, princess style, elegant"
-      pajamas: "cute pajamas, shorts, tank top, bedroom"
-      nude: "nude, young body, tan lines, blushing, age 18"
+      uniform_mod: "Modified school uniform, very short skirt, open cardigan, loose tie, provocative attitude"
+      swimsuit: "Tiny swimsuit, athletic physique, sun-kissed skin"
+      cheerleader: "Cheerleader uniform, short skirt, pom-poms, contagious energy"
+      prom_dress: "Princess-style evening dress, elegant and rich-girl style"
+      pajamas: "Cute and casual pajamas, intimate bedroom atmosphere"
+      nude: "Nude, young natural body, shy but curious"
     
     personality_system:
       core_traits:
@@ -258,11 +343,11 @@ companions:
     base_prompt: "score_9, score_8_up, stsSmith, ultra-detailed, realistic lighting, 1girl, mature female, (middle eastern woman:1.5), veiny breasts, black hair, short hair, evil smile, glowing magic, <lora:stsSmith-10e:0.65> <lora:Expressive_H:0.2> <lora:FantasyWorldPonyV2:0.40>"
     
     wardrobe:
-      cleaning_uniform: "grey janitor jumpsuit, unzipped to chest, worn sneakers, work gloves"
-      casual_smoke: "worn t-shirt, sweatpants, cigarette, tired expression"
-      nightgown: "satin robe, mature body, messy hair, domestic intimacy"
-      cooking: "apron, casual clothes, flour on hands, motherly"
-      nude: "nude, mature body 55, natural curves, age marks, confident, experienced"
+      cleaning_uniform: "Worn but fitted work uniform, practical for moving, atmosphere of someone who works with her hands"
+      casual_smoke: "Worn home clothes, tired but intriguing look, lived-in woman"
+      nightgown: "Soft robe, domestic intimacy, messy hair, nighttime atmosphere"
+      cooking: "Apron over comfortable clothes, flour on hands, maternal and caring attitude"
+      nude: "Nude, mature body with signs of time, confidence of an experienced woman"
     
     personality_system:
       core_traits:
@@ -559,6 +644,942 @@ quests:
       flags:
         knows_luna_divorce: true
 
+  # ==========================================================
+  # QUEST LUNA - Aggiuntive
+  # ==========================================================
+  luna_gym_class:
+    meta:
+      title: "Substitute Gym Teacher"
+      description: "Luna substitutes for the gym teacher. You're the only one who stayed for extra practice."
+      type: "side"
+      character: "Luna"
+      hidden: true
+    
+    activation:
+      type: "auto"
+      conditions:
+        - type: "affinity"
+          target: "Luna"
+          operator: "gte"
+          value: 30
+        - type: "time"
+          operator: "eq"
+          value: "Afternoon"
+    
+    stages:
+      gym_practice:
+        title: "After School Practice"
+        narrative_prompt: "The gym is empty except for you. Luna arrives in a tracksuit, hair tied back, looking different from her usual formal self..."
+        on_enter:
+          - action: "set_location"
+            target: "Gym"
+          - action: "set_outfit"
+            character: "Luna"
+            outfit: "gym_teacher"
+        exit_conditions:
+          - type: "turn_count"
+            operator: "gte"
+            value: 2
+        transitions:
+          - condition: "default"
+            target: "_complete"
+    
+    rewards:
+      affinity:
+        Luna: 12
+      flags:
+        luna_gym_seen: true
+
+  luna_oral_exam:
+    meta:
+      title: "The Oral Examination"
+      description: "Luna calls you for a private oral exam. The classroom is empty."
+      type: "side"
+      character: "Luna"
+      hidden: true
+    
+    activation:
+      type: "auto"
+      conditions:
+        - type: "affinity"
+          target: "Luna"
+          operator: "gte"
+          value: 40
+        - type: "flag"
+          key: "luna_gym_seen"
+          value: true
+    
+    stages:
+      the_exam:
+        title: "Private Testing"
+        narrative_prompt: "Classroom 3B is empty. Luna sits on her desk, legs crossed, holding your file. 'Close the door. This examination is just for you...'"
+        on_enter:
+          - action: "set_location"
+            target: "Classroom 3B"
+          - action: "set_emotional_state"
+            character: "Luna"
+            state: "after_class"
+        exit_conditions:
+          - type: "turn_count"
+            operator: "gte"
+            value: 3
+        transitions:
+          - condition: "default"
+            target: "_complete"
+    
+    rewards:
+      affinity:
+        Luna: 20
+      unlock_outfits:
+        - "private_tutoring"
+
+  # ==========================================================
+  # QUEST STELLA - Aggiuntive
+  # ==========================================================
+  stella_basketball:
+    meta:
+      title: "One-on-One Challenge"
+      description: "Stella challenges you to a basketball game after school"
+      type: "side"
+      character: "Stella"
+      hidden: true
+    
+    activation:
+      type: "auto"
+      conditions:
+        - type: "affinity"
+          target: "Stella"
+          operator: "gte"
+          value: 25
+        - type: "location"
+          operator: "eq"
+          value: "Gym"
+    
+    stages:
+      the_game:
+        title: "Basketball Court"
+        narrative_prompt: "Stella bounces the ball, smirking. 'Think you can beat me, transfer student? Loser buys winner lunch.' She's wearing shorts and a tank top, sweat already glistening..."
+        on_enter:
+          - action: "set_outfit"
+            character: "Stella"
+            outfit: "gym_teacher"
+        exit_conditions:
+          - type: "action"
+            pattern: "win|lose|play|score"
+        transitions:
+          - condition: "default"
+            target: "_complete"
+    
+    rewards:
+      affinity:
+        Stella: 15
+      flags:
+        stella_basketball_complete: true
+
+  stella_photoshoot:
+    meta:
+      title: "The Secret Photoshoot"
+      description: "Stella asks you to help with her social media photos"
+      type: "side"
+      character: "Stella"
+      hidden: true
+    
+    activation:
+      type: "auto"
+      conditions:
+        - type: "affinity"
+          target: "Stella"
+          operator: "gte"
+          value: 45
+        - type: "flag"
+          key: "stella_basketball_complete"
+          value: true
+    
+    stages:
+      photoshoot:
+        title: "Photo Session"
+        narrative_prompt: "Stella's bedroom. She's trying on different outfits for her social media. 'Be honest, which one looks better?' She holds up a tiny bikini and a short dress..."
+        on_enter:
+          - action: "set_location"
+            target: "Stella Bedroom"
+          - action: "set_outfit"
+            character: "Stella"
+            outfit: "swimsuit"
+        exit_conditions:
+          - type: "turn_count"
+            operator: "gte"
+            value: 3
+        transitions:
+          - condition: "default"
+            target: "_complete"
+    
+    rewards:
+      affinity:
+        Stella: 25
+      unlock_outfits:
+        - "pajamas"
+
+  # ==========================================================
+  # QUEST MARIA - Aggiuntive
+  # ==========================================================
+  maria_help_carry:
+    meta:
+      title: "Heavy Lifting"
+      description: "Help Maria carry cleaning supplies to the storage room"
+      type: "side"
+      character: "Maria"
+      hidden: true
+    
+    activation:
+      type: "auto"
+      conditions:
+        - type: "affinity"
+          target: "Maria"
+          operator: "gte"
+          value: 20
+    
+    stages:
+      helping:
+        title: "Storage Room"
+        narrative_prompt: "Maria struggles with heavy boxes. 'Hey kid, give an old lady a hand?' Her worn uniform stretches as she lifts, revealing more than she realizes..."
+        on_enter:
+          - action: "set_location"
+            target: "Storage Room"
+        exit_conditions:
+          - type: "action"
+            pattern: "help|carry|lift|assist"
+        transitions:
+          - condition: "default"
+            target: "_complete"
+    
+    rewards:
+      affinity:
+        Maria: 10
+      flags:
+        maria_helped_carry: true
+
+  maria_massage:
+    meta:
+      title: "The Thank You Massage"
+      description: "Maria offers to repay your help with a massage"
+      type: "side"
+      character: "Maria"
+      hidden: true
+    
+    activation:
+      type: "auto"
+      conditions:
+        - type: "affinity"
+          target: "Maria"
+          operator: "gte"
+          value: 35
+        - type: "flag"
+          key: "maria_helped_carry"
+          value: true
+    
+    stages:
+      the_massage:
+        title: "Teachers' Lounge"
+        narrative_prompt: "It's late. The school is empty. Maria locks the door. 'You helped my old back. Let me... repay you.' She has massage oil and a knowing smile..."
+        on_enter:
+          - action: "set_location"
+            target: "Teachers Lounge"
+          - action: "set_emotional_state"
+            character: "Maria"
+            state: "maternal"
+          - action: "set_time"
+            target: "Evening"
+        exit_conditions:
+          - type: "turn_count"
+            operator: "gte"
+            value: 3
+        transitions:
+          - condition: "default"
+            target: "_complete"
+    
+    rewards:
+      affinity:
+        Maria: 20
+      flags:
+        maria_massage_received: true
+
+  # ==========================================================
+  # QUEST STELLA - Ballo Scolastico
+  # ==========================================================
+  stella_school_dance:
+    meta:
+      title: "The School Dance"
+      description: "The annual school dance. Stella needs a partner."
+      type: "side"
+      character: "Stella"
+      hidden: true
+    
+    activation:
+      type: "auto"
+      conditions:
+        - type: "affinity"
+          target: "Stella"
+          operator: "gte"
+          value: 35
+    
+    stages:
+      invitation:
+        title: "Will You Dance?"
+        narrative_prompt: "The gym is decorated with lights and balloons. Stella stands alone by the punch bowl, looking around nervously. She spots you and waves you over..."
+        on_enter:
+          - action: "set_location"
+            target: "Gym"
+          - action: "set_outfit"
+            character: "Stella"
+            outfit: "prom_dress"
+          - action: "set_time"
+            target: "Evening"
+        exit_conditions:
+          - type: "action"
+            pattern: "dance|ask|partner"
+        transitions:
+          - condition: "default"
+            target: "the_dance"
+      
+      the_dance:
+        title: "Slow Dance"
+        narrative_prompt: "The lights dim. A slow song starts. Stella puts her arms around your neck, her body pressed close. 'Don't step on my feet,' she whispers, but she's smiling..."
+        on_enter:
+          - action: "set_emotional_state"
+            character: "Stella"
+            state: "clingy"
+        exit_conditions:
+          - type: "turn_count"
+            operator: "gte"
+            value: 2
+        transitions:
+          - condition: "default"
+            target: "_complete"
+    
+    rewards:
+      affinity:
+        Stella: 25
+      flags:
+        school_dance_partner: true
+
+  # ==========================================================
+  # QUEST LUNA - Cinema della Scuola
+  # ==========================================================
+  luna_movie_night:
+    meta:
+      title: "After Hours Cinema"
+      description: "Luna invites you to a private movie screening after school"
+      type: "side"
+      character: "Luna"
+      hidden: true
+    
+    activation:
+      type: "auto"
+      conditions:
+        - type: "affinity"
+          target: "Luna"
+          operator: "gte"
+          value: 55
+        - type: "time"
+          operator: "eq"
+          value: "Evening"
+    
+    stages:
+      invitation:
+        title: "Private Screening"
+        narrative_prompt: "Luna approaches you after class. 'The school has an old cinema room. I have the keys. Care to join me for a private screening? Just you and me...'"
+        on_enter:
+          - action: "set_location"
+            target: "School Cinema"
+          - action: "set_outfit"
+            character: "Luna"
+            outfit: "casual_teacher"
+        exit_conditions:
+          - type: "action"
+            pattern: "accept|join|yes"
+        transitions:
+          - condition: "default"
+            target: "the_movie"
+      
+      the_movie:
+        title: "In the Dark"
+        narrative_prompt: "The cinema is dark, only the screen flickering. Luna sits next to you, closer than necessary. During a romantic scene, her hand 'accidentally' brushes against yours..."
+        on_enter:
+          - action: "set_emotional_state"
+            character: "Luna"
+            state: "after_class"
+        exit_conditions:
+          - type: "turn_count"
+            operator: "gte"
+            value: 3
+        transitions:
+          - condition: "default"
+            target: "_complete"
+    
+    rewards:
+      affinity:
+        Luna: 30
+      unlock_outfits:
+        - "casual_teacher"
+
+  # ==========================================================
+  # QUEST MARIA - Cena a Casa
+  # ==========================================================
+  maria_home_dinner:
+    meta:
+      title: "Home Cooking"
+      description: "Maria invites you to her home for a homemade dinner"
+      type: "side"
+      character: "Maria"
+      hidden: true
+    
+    activation:
+      type: "auto"
+      conditions:
+        - type: "affinity"
+          target: "Maria"
+          operator: "gte"
+          value: 50
+    
+    stages:
+      invitation:
+        title: "Dinner Invitation"
+        narrative_prompt: "Maria finds you after school. 'You remind me of my son... if I had one. Come to my place tonight. I'll cook something special. Just don't tell anyone.'"
+        on_enter:
+          - action: "set_location"
+            target: "Maria's Apartment"
+          - action: "set_outfit"
+            character: "Maria"
+            outfit: "cooking"
+          - action: "set_time"
+            target: "Evening"
+        exit_conditions:
+          - type: "action"
+            pattern: "accept|dinner|home"
+        transitions:
+          - condition: "default"
+            target: "the_dinner"
+      
+      the_dinner:
+        title: "Intimate Dinner"
+        narrative_prompt: "Maria's small apartment smells amazing. She's wearing an apron over a simple dress. 'Make yourself comfortable,' she says, pouring wine. 'You're the first student I've ever invited here...'"
+        on_enter:
+          - action: "set_emotional_state"
+            character: "Maria"
+            state: "maternal"
+        exit_conditions:
+          - type: "turn_count"
+            operator: "gte"
+            value: 3
+        transitions:
+          - condition: "default"
+            target: "_complete"
+    
+    rewards:
+      affinity:
+        Maria: 25
+      flags:
+        maria_home_visited: true
+
+  # ==========================================================
+  # QUEST STELLA - Shopping Trip
+  # ==========================================================
+  stella_shopping:
+    meta:
+      title: "Personal Shopper"
+      description: "Stella drags you shopping to help her choose outfits"
+      type: "side"
+      character: "Stella"
+      hidden: true
+    
+    activation:
+      type: "auto"
+      conditions:
+        - type: "affinity"
+          target: "Stella"
+          operator: "gte"
+          value: 40
+    
+    stages:
+      the_mall:
+        title: "Dressing Room"
+        narrative_prompt: "Stella pulls you into a fancy boutique. 'I need a male opinion,' she says, pushing you into the dressing room area. She tries on different outfits while you wait outside... or do you peek?"
+        on_enter:
+          - action: "set_location"
+            target: "Shopping Mall"
+        exit_conditions:
+          - type: "turn_count"
+            operator: "gte"
+            value: 3
+        transitions:
+          - condition: "default"
+            target: "_complete"
+    
+    rewards:
+      affinity:
+        Stella: 15
+      flags:
+        stella_shopping_done: true
+
+  # ==========================================================
+  # QUEST LUNA - Incidente in Classe
+  # ==========================================================
+  luna_chalk_accident:
+    meta:
+      title: "The Chalk Incident"
+      description: "You 'accidentally' drop chalk. Luna bends to pick it up..."
+      type: "side"
+      character: "Luna"
+      hidden: true
+    
+    activation:
+      type: "auto"
+      conditions:
+        - type: "affinity"
+          target: "Luna"
+          operator: "gte"
+          value: 20
+        - type: "location"
+          operator: "eq"
+          value: "Classroom 3B"
+    
+    stages:
+      the_incident:
+        title: "Bending Over"
+        narrative_prompt: "During Luna's lesson, you 'accidentally' drop your pen near her feet. Luna sighs and bends down to pick it up. Her tight skirt rides up, giving you a view you shouldn't have..."
+        on_enter:
+          - action: "set_emotional_state"
+            character: "Luna"
+            state: "flustered"
+        exit_conditions:
+          - type: "turn_count"
+            operator: "gte"
+            value: 1
+        transitions:
+          - condition: "default"
+            target: "_complete"
+    
+    rewards:
+      affinity:
+        Luna: 8
+      flags:
+        luna_chalk_seen: true
+
+  # ==========================================================
+  # QUEST STELLA - Biblioteca Notte
+  # ==========================================================
+  stella_library_night:
+    meta:
+      title: "Late Night Study"
+      description: "Studying alone with Stella in the library after hours"
+      type: "side"
+      character: "Stella"
+      hidden: true
+    
+    activation:
+      type: "auto"
+      conditions:
+        - type: "affinity"
+          target: "Stella"
+          operator: "gte"
+          value: 30
+        - type: "location"
+          operator: "eq"
+          value: "Library"
+        - type: "time"
+          operator: "eq"
+          value: "Evening"
+    
+    stages:
+      studying:
+        title: "Alone in the Library"
+        narrative_prompt: "The library is closing. It's just you and Stella. She sits across from you, kicking off her shoes under the table. Her foot 'accidentally' touches your leg..."
+        on_enter:
+          - action: "set_emotional_state"
+            character: "Stella"
+            state: "tsundere"
+        exit_conditions:
+          - type: "turn_count"
+            operator: "gte"
+            value: 2
+        transitions:
+          - condition: "default"
+            target: "_complete"
+    
+    rewards:
+      affinity:
+        Stella: 12
+
+  # ==========================================================
+  # QUEST CLASSICHE DA VISUAL NOVEL GIAPPONESI
+  # ==========================================================
+
+  # --- BAGNO SBAGLIATO (Luna) ---
+  luna_wrong_bathroom:
+    meta:
+      title: "Wrong Door Accident"
+      description: "You accidentally walk into the teacher's bathroom while Luna is inside"
+      type: "side"
+      character: "Luna"
+      hidden: true
+    
+    activation:
+      type: "auto"
+      conditions:
+        - type: "affinity"
+          target: "Luna"
+          operator: "gte"
+          value: 15
+    
+    stages:
+      accident:
+        title: "Embarrassing Encounter"
+        narrative_prompt: "You push the door thinking it's the student bathroom. Steam fills the room. Luna stands there in a towel, hair wet, eyes wide. 'GET OUT!' she screams, but her blush says something else..."
+        on_enter:
+          - action: "set_emotional_state"
+            character: "Luna"
+            state: "flustered"
+          - action: "set_flag"
+            key: "saw_luna_towel"
+            value: true
+        exit_conditions:
+          - type: "turn_count"
+            operator: "gte"
+            value: 2
+        transitions:
+          - condition: "default"
+            target: "_complete"
+    
+    rewards:
+      affinity:
+        Luna: 10
+
+  # --- OMBRELLO CONDIVISO (Stella) ---
+  stella_shared_umbrella:
+    meta:
+      title: "Under One Umbrella"
+      description: "It's raining. Stella forgot her umbrella. You offer to share yours."
+      type: "side"
+      character: "Stella"
+      hidden: true
+    
+    activation:
+      type: "auto"
+      conditions:
+        - type: "affinity"
+          target: "Stella"
+          operator: "gte"
+          value: 25
+        - type: "flag"
+          key: "rainstorm_active"
+          value: true
+    
+    stages:
+      walk_home:
+        title: "Rainy Walk"
+        narrative_prompt: "The umbrella is small. Stella presses against you to stay dry. Her uniform gets wet, becoming see-through. 'Don't look, pervert!' she says, but she doesn't move away..."
+        on_enter:
+          - action: "set_emotional_state"
+            character: "Stella"
+            state: "tsundere"
+        exit_conditions:
+          - type: "turn_count"
+            operator: "gte"
+            value: 2
+        transitions:
+          - condition: "default"
+            target: "_complete"
+    
+    rewards:
+      affinity:
+        Stella: 15
+
+  # --- CURARE IL MALATO (Maria) ---
+  maria_sick_care:
+    meta:
+      title: "Nursing the Nurse"
+      description: "Maria is sick at home. You bring her homework and take care of her."
+      type: "side"
+      character: "Maria"
+      hidden: true
+    
+    activation:
+      type: "auto"
+      conditions:
+        - type: "affinity"
+          target: "Maria"
+          operator: "gte"
+          value: 30
+    
+    stages:
+      nursing:
+        title: "Bedside Care"
+        narrative_prompt: "Maria's apartment is quiet. She's in bed with fever, wearing only a thin nightgown. 'You shouldn't be here,' she weakly protests as you place a cold towel on her forehead. Her hand finds yours..."
+        on_enter:
+          - action: "set_location"
+            target: "Maria's Apartment"
+          - action: "set_outfit"
+            character: "Maria"
+            outfit: "nightgown"
+          - action: "set_emotional_state"
+            character: "Maria"
+            state: "maternal"
+        exit_conditions:
+          - type: "turn_count"
+            operator: "gte"
+            value: 3
+        transitions:
+          - condition: "default"
+            target: "_complete"
+    
+    rewards:
+      affinity:
+        Maria: 20
+      flags:
+        maria_cared_sick: true
+
+  # --- CADUTA SOPRA DI LEI (Stella) ---
+  stella_fall_on_her:
+    meta:
+      title: "Accidental Position"
+      description: "You trip and fall on top of Stella. Classic anime accident."
+      type: "side"
+      character: "Stella"
+      hidden: true
+    
+    activation:
+      type: "auto"
+      conditions:
+        - type: "affinity"
+          target: "Stella"
+          operator: "gte"
+          value: 20
+    
+    stages:
+      fall:
+        title: "Awkward Landing"
+        narrative_prompt: "You trip on the stairs. Stella tries to catch you but you both fall. You end up on top of her, hands in compromising places. Her face is red. 'G-GET OFF ME!' But she doesn't push you away immediately..."
+        on_enter:
+          - action: "set_emotional_state"
+            character: "Stella"
+            state: "tsundere"
+        exit_conditions:
+          - type: "turn_count"
+            operator: "gte"
+            value: 1
+        transitions:
+          - condition: "default"
+            target: "_complete"
+    
+    rewards:
+      affinity:
+        Stella: 10
+      flags:
+        fell_on_stella: true
+
+  # --- CONFESSIONE SUL TETTO (Luna) ---
+  luna_rooftop_confession:
+    meta:
+      title: "Rooftop Confession"
+      description: "You find Luna alone on the school rooftop at sunset"
+      type: "side"
+      character: "Luna"
+      hidden: true
+    
+    activation:
+      type: "auto"
+      conditions:
+        - type: "affinity"
+          target: "Luna"
+          operator: "gte"
+          value: 60
+        - type: "time"
+          operator: "eq"
+          value: "Evening"
+    
+    stages:
+      confession:
+        title: "Sunset Confession"
+        narrative_prompt: "The rooftop is empty. Luna stands by the fence, wind in her hair. 'I shouldn't feel this way,' she whispers without turning. 'You're my student. But when I'm with you... I forget I'm a teacher.'"
+        on_enter:
+          - action: "set_location"
+            target: "School Rooftop"
+          - action: "set_emotional_state"
+            character: "Luna"
+            state: "vulnerable"
+          - action: "set_flag"
+            key: "luna_confessed"
+            value: true
+        exit_conditions:
+          - type: "turn_count"
+            operator: "gte"
+            value: 3
+        transitions:
+          - condition: "default"
+            target: "_complete"
+    
+    rewards:
+      affinity:
+        Luna: 35
+
+  # --- FESTA DELLO SPORT (Stella) ---
+  stella_sports_festival:
+    meta:
+      title: "Sports Festival"
+      description: "Annual school sports day. Stella is participating in the relay race."
+      type: "side"
+      character: "Stella"
+      hidden: true
+    
+    activation:
+      type: "scheduled"
+      day: 14
+      time: "Morning"
+    
+    stages:
+      race:
+        title: "Cheering Her On"
+        narrative_prompt: "The sports field is packed. Stella runs the relay, her gym uniform sticking to her sweaty body. She trips! You rush to help. She looks up at you from the ground, tears in her eyes... 'I... I wanted to win for you.'"
+        on_enter:
+          - action: "set_location"
+            target: "Sports Field"
+          - action: "set_outfit"
+            character: "Stella"
+            outfit: "gym_teacher"
+        exit_conditions:
+          - type: "turn_count"
+            operator: "gte"
+            value: 2
+        transitions:
+          - condition: "default"
+            target: "_complete"
+    
+    rewards:
+      affinity:
+        Stella: 20
+      flags:
+        sports_festival_cheered: true
+
+  # --- FESTA DI CULTURA (Maria) ---
+  maria_culture_festival:
+    meta:
+      title: "Culture Festival"
+      description: "School festival. Maria runs a food stall. You help her."
+      type: "side"
+      character: "Maria"
+      hidden: true
+    
+    activation:
+      type: "scheduled"
+      day: 21
+      time: "Afternoon"
+    
+    stages:
+      stall:
+        title: "Food Stall Romance"
+        narrative_prompt: "Maria's food stall is busy. She wears a traditional apron, flour on her cheeks. 'You really came,' she smiles, surprised. The festival lights reflect in her eyes. 'Help me serve? We'll be partners for the day.'"
+        on_enter:
+          - action: "set_location"
+            target: "School Festival"
+          - action: "set_outfit"
+            character: "Maria"
+            outfit: "cooking"
+        exit_conditions:
+          - type: "turn_count"
+            operator: "gte"
+            value: 3
+        transitions:
+          - condition: "default"
+            target: "_complete"
+    
+    rewards:
+      affinity:
+        Maria: 18
+
+  # --- NOTTE IN CLASSE (Luna) ---
+  luna_classroom_night:
+    meta:
+      title: "Night in the Classroom"
+      description: "You fell asleep in class. Wake up to find Luna watching over you."
+      type: "side"
+      character: "Luna"
+      hidden: true
+    
+    activation:
+      type: "auto"
+      conditions:
+        - type: "affinity"
+          target: "Luna"
+          operator: "gte"
+          value: 45
+        - type: "time"
+          operator: "eq"
+          value: "Night"
+    
+    stages:
+      night_class:
+        title: "Sleeping Beauty"
+        narrative_prompt: "You wake up. The school is dark. Luna sits at her desk, watching you. 'You slept through the bell,' she says softly. 'I couldn't wake you. I... I didn't want to leave you alone in the dark.'"
+        on_enter:
+          - action: "set_location"
+            target: "Classroom 3B"
+          - action: "set_emotional_state"
+            character: "Luna"
+            state: "after_class"
+        exit_conditions:
+          - type: "turn_count"
+            operator: "gte"
+            value: 3
+        transitions:
+          - condition: "default"
+            target: "_complete"
+    
+    rewards:
+      affinity:
+        Luna: 25
+
+  # --- NASCONDINO (Stella) ---
+  stella_hide_seek:
+    meta:
+      title: "Hide and Seek"
+      description: "Playing hide and seek during a blackout at school. You find Stella hiding in a closet."
+      type: "side"
+      character: "Stella"
+      hidden: true
+    
+    activation:
+      type: "auto"
+      conditions:
+        - type: "affinity"
+          target: "Stella"
+          operator: "gte"
+          value: 28
+        - type: "flag"
+          key: "blackout_active"
+          value: true
+    
+    stages:
+      closet:
+        title: "Dark Closet"
+        narrative_prompt: "You open the supply closet in the dark. Stella is there, pressed against the wall. 'Shh!' she whispers, pulling you inside. The door closes. It's pitch black. You're pressed together in the small space..."
+        on_enter:
+          - action: "set_location"
+            target: "Storage Room"
+          - action: "set_emotional_state"
+            character: "Stella"
+            state: "flustered"
+        exit_conditions:
+          - type: "turn_count"
+            operator: "gte"
+            value: 2
+        transitions:
+          - condition: "default"
+            target: "_complete"
+    
+    rewards:
+      affinity:
+        Stella: 22
+
 # ============================================================
 # 5. MILESTONES
 # ============================================================
@@ -716,6 +1737,160 @@ global_events:
         - action: "set_flag"
           key: "blackout_active"
           value: true
+  
+  school_trip_beach:
+    meta:
+      title: "School Trip to the Coast"
+      description: "The whole school goes to the beach for a day. Uniforms off, swimsuits on."
+    
+    trigger:
+      type: "scheduled"
+      day: 7
+      season: "spring"
+      time: "Morning"
+    
+    effect:
+      description: "Beach atmosphere changes everything"
+      actions:
+        - action: "set_location"
+          target: "Beach Resort"
+        - action: "set_outfit"
+          character: "Luna"
+          outfit: "beach_teacher"
+        - action: "set_outfit"
+          character: "Stella"
+          outfit: "swimsuit"
+        - action: "set_outfit"
+          character: "Maria"
+          outfit: "casual_smoke"
+    
+    on_expire:
+      - action: "set_location"
+        target: "School Gate"
+  
+  locked_in_classroom:
+    meta:
+      title: "Locked In!"
+      description: "You and the current companion get accidentally locked in a room"
+    
+    trigger:
+      type: "random"
+      chance: 0.12
+      conditions:
+        - time: "Evening"
+    
+    effect:
+      description: "Forced proximity creates tension"
+      actions:
+        - action: "set_emotional_state"
+          character: "{current_companion}"
+          state: "vulnerable"
+      
+    on_expire:
+      - action: "set_emotional_state"
+        character: "{current_companion}"
+        state: "default"
+  
+  detention_together:
+    meta:
+      title: "Shared Detention"
+      description: "You and Stella both got detention. Luna is supervising."
+    
+    trigger:
+      type: "random"
+      chance: 0.10
+      conditions:
+        - time: "Afternoon"
+    
+    effect:
+      description: "Being bad together"
+      actions:
+        - action: "set_location"
+          target: "Classroom 3B"
+        - action: "set_emotional_state"
+          character: "Stella"
+          state: "tsundere"
+  
+  maria_smoke_break:
+    meta:
+      title: "Smoke Break Chat"
+      description: "Find Maria smoking behind the gym. She's surprisingly talkative."
+    
+    trigger:
+      type: "random"
+      chance: 0.15
+      conditions:
+        - location_type: "outdoor"
+        - time: "Afternoon"
+    
+    effect:
+      description: "Maria opens up"
+      actions:
+        - action: "set_emotional_state"
+          character: "Maria"
+          state: "chatty"
+  
+  luna_caught_changing:
+    meta:
+      title: "Wrong Door"
+      description: "You accidentally walk in on Luna changing in the teacher's locker room"
+    
+    trigger:
+      type: "random"
+      chance: 0.08
+      conditions:
+        - time: "Morning"
+    
+    effect:
+      description: "Awkward but exciting encounter"
+      actions:
+        - action: "set_emotional_state"
+          character: "Luna"
+          state: "flustered"
+        - action: "set_flag"
+          key: "saw_luna_changing"
+          value: true
+  
+  stella_cheerleader_practice:
+    meta:
+      title: "After School Practice"
+      description: "Stella is practicing cheerleading alone in the gym"
+    
+    trigger:
+      type: "random"
+      chance: 0.12
+      conditions:
+        - location: "Gym"
+        - time: "Afternoon"
+    
+    effect:
+      description: "Private show"
+      actions:
+        - action: "set_outfit"
+          character: "Stella"
+          outfit: "cheerleader"
+        - action: "set_emotional_state"
+          character: "Stella"
+          state: "competitive"
+  
+  library_encounter:
+    meta:
+      title: "Quiet Library"
+      description: "The library is almost empty. Perfect for 'studying' together."
+    
+    trigger:
+      type: "random"
+      chance: 0.15
+      conditions:
+        - location: "Library"
+        - time: "Evening"
+    
+    effect:
+      description: "Quiet intimacy"
+      actions:
+        - action: "set_emotional_state"
+          character: "{current_companion}"
+          state: "after_class"
 
 # ============================================================
 # 8. LOCATIONS
@@ -750,6 +1925,72 @@ locations:
     description: "Medical bed, privacy, intimate"
     companions: ["Luna"]
     indoor: true
+  
+  beach_resort:
+    name: "Beach Resort"
+    description: "Golden sand, turquoise water, beach umbrellas. Teachers and students in swimsuits."
+    companions: ["Luna", "Stella", "Maria"]
+    indoor: false
+  
+  classroom_3b:
+    name: "Classroom 3B"
+    description: "Luna's literature classroom, afternoon sun through windows"
+    companions: ["Luna"]
+    indoor: true
+  
+  stella_bedroom:
+    name: "Stella's Bedroom"
+    description: "Pink walls, large mirror, clothes everywhere, intimate atmosphere"
+    companions: ["Stella"]
+    indoor: true
+  
+  teachers_lounge:
+    name: "Teachers' Lounge"
+    description: "Comfortable sofas, coffee machine, private and cozy"
+    companions: ["Luna", "Maria"]
+    indoor: true
+  
+  gym:
+    name: "School Gym"
+    description: "Basketball court, bleachers, equipment room, echoing space"
+    companions: ["Luna", "Stella"]
+    indoor: true
+  
+  school_cinema:
+    name: "School Cinema Room"
+    description: "Old projector, red velvet seats, intimate darkness"
+    companions: ["Luna"]
+    indoor: true
+  
+  maria_apartment:
+    name: "Maria's Apartment"
+    description: "Small cozy place, cooking smells, intimate domestic setting"
+    companions: ["Maria"]
+    indoor: true
+  
+  shopping_mall:
+    name: "Shopping Mall"
+    description: "Boutiques, dressing rooms, bustling with people"
+    companions: ["Stella"]
+    indoor: true
+  
+  school_rooftop:
+    name: "School Rooftop"
+    description: "Sunset view, fence, forbidden romantic spot, wind"
+    companions: ["Luna", "Stella"]
+    indoor: false
+  
+  sports_field:
+    name: "Sports Field"
+    description: "Running track, grass field, bleachers, festival atmosphere"
+    companions: ["Stella", "Luna"]
+    indoor: false
+  
+  school_festival:
+    name: "School Festival"
+    description: "Food stalls, decorations, crowded, festive lights"
+    companions: ["Maria", "Stella", "Luna"]
+    indoor: false
 
 # ============================================================
 # 9. TIME CYCLE
