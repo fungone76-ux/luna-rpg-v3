@@ -52,10 +52,10 @@ companions:
   # ==========================================================
   Luna:
     default_outfit: "executive_suit"
-    base_prompt: "score_9, score_8_up, stsdebbie, mature woman, brown hair, glasses, authoritative, age 43"
+    base_prompt: "score_9, score_8_up, masterpiece, photorealistic, detailed, atmospheric, stsdebbie, dynamic pose, 1girl, mature woman, brown hair, shiny skin, head tilt, massive breasts, cleavage, <lora:stsDebbie-10e:0.7> <lora:Expressive_H-000001:0.20> <lora:FantasyWorldPonyV2:0.40>"
     
     wardrobe:
-      executive_suit: "tight charcoal pencil skirt, white silk blouse, black stockings, glasses, professional"
+      executive_suit: "tight charcoal pencil skirt, white silk blouse, black stockings, professional"
       teacher_suit: "grey formal dress, pearl necklace, authoritative"
       gym_substitute: "tracksuit jacket unzipped, tight shorts, whistle, sweaty skin"
       medical_gown: "white nurse coat, stethoscope, open coat"
@@ -153,7 +153,7 @@ companions:
   # ==========================================================
   Stella:
     default_outfit: "uniform_mod"
-    base_prompt: "score_9, score_8_up, alice_milf_catchers, blonde hair, blue eyes, young, age 18, schoolgirl"
+    base_prompt: "score_9, score_8_up, masterpiece, NSFW, photorealistic, 1girl, alice_milf_catchers, massive breasts, cleavage, blonde hair, beautiful blue eyes, shapely legs, hourglass figure, skinny body, narrow waist, wide hips, <lora:alice_milf_catchers_lora:0.7> <lora:Expressive_H:0.2>"
     
     wardrobe:
       uniform_mod: "school uniform, micro miniskirt, cardigan open, loose tie"
@@ -255,7 +255,7 @@ companions:
   # ==========================================================
   Maria:
     default_outfit: "cleaning_uniform"
-    base_prompt: "score_9, score_8_up, stsSmith, mature female, middle eastern, age 55, working class"
+    base_prompt: "score_9, score_8_up, stsSmith, ultra-detailed, realistic lighting, 1girl, mature female, (middle eastern woman:1.5), veiny breasts, black hair, short hair, evil smile, glowing magic, <lora:stsSmith-10e:0.65> <lora:Expressive_H:0.2> <lora:FantasyWorldPonyV2:0.40>"
     
     wardrobe:
       cleaning_uniform: "grey janitor jumpsuit, unzipped to chest, worn sneakers, work gloves"
