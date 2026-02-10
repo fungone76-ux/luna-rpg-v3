@@ -30,7 +30,7 @@
   },
   "4": {
     "inputs": {
-      "unet_name": "Wan2.2-I2V-A14B-HighNoise-Q5_K_M.gguf"
+      "unet_name": "Model_Civitai_fp8.gguf"
     },
     "class_type": "UnetLoaderGGUF",
     "_meta": {
@@ -39,16 +39,16 @@
   },
   "5": {
     "inputs": {
-      "unet_name": "Wan2.2-I2V-A14B-LowNoise-Q5_K_M.gguf"
+      "unet_name": "Model_Civitai_fp8.gguf"
     },
     "class_type": "UnetLoaderGGUF",
     "_meta": {
-      "title": "5. MODELLO LOW (Dettagli)"
+      "title": "5. MODELLO LOW (Dettagli) - Stesso file per entrambi"
     }
   },
   "6": {
     "inputs": {
-      "text": "A cinematic, high-detail shot of a beautiful woman in a classroom. She gracefully raises her right hand, running her fingers through her long, wavy hair to adjust it behind her ear. Realistic skin texture, soft natural lighting from a nearby window, subtle smile, flowing hair strands, 4k, highly detailed, fluid motion, masterpiece.\"",
+      "text": "A cinematic, high-detail shot of a beautiful woman in a classroom. She gracefully raises her right hand, running her fingers through her long, wavy hair to adjust it behind her ear. Realistic skin texture, soft natural lighting from a nearby window, subtle smile, flowing hair strands, 4k, highly detailed, fluid motion, masterpiece.",
       "clip": [
         "2",
         0
@@ -74,8 +74,8 @@
   },
   "8": {
     "inputs": {
-      "width": 768,
-      "height": 1280,
+      "width": 512,
+      "height": 768,
       "length": 81,
       "batch_size": 1,
       "positive": [
@@ -210,7 +210,7 @@
   },
   "21": {
     "inputs": {
-      "lora_name": "Wan2.2-Lightning_I2V-A14B-4steps-lora_LOW_fp16.safetensors",
+      "lora_name": "SVI_v2_PRO_Wan2.2_LOW.safetensors",
       "strength_model": 1,
       "model": [
         "5",
@@ -219,12 +219,12 @@
     },
     "class_type": "LoraLoaderModelOnly",
     "_meta": {
-      "title": "Load LoRA"
+      "title": "Load LoRA LOW"
     }
   },
   "22": {
     "inputs": {
-      "lora_name": "Wan2.2-Lightning_I2V-A14B-4steps-lora_HIGH_fp16.safetensors",
+      "lora_name": "SVI_v2_PRO_Wan2.2_HIGH.safetensors",
       "strength_model": 1,
       "model": [
         "4",
@@ -233,7 +233,7 @@
     },
     "class_type": "LoraLoaderModelOnly",
     "_meta": {
-      "title": "Load LoRA"
+      "title": "Load LoRA HIGH"
     }
   }
 }

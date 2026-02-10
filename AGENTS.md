@@ -47,8 +47,8 @@ luna-rpg-v3/
 │   └── video_client.py        # Wan2.1 I2V per video
 │
 ├── ui/                        # Interfaccia PySide6
-│   ├── startup_dialog.py      # Selezione mondo/companion
-│   ├── main_window.py         # Finestra principale + Quest Tracker
+│   ├── startup_dialog.py      # Selezione mondo/companion + Load Game da DB
+│   ├── main_window.py         # Finestra principale + Quest Tracker (dynamic)
 │   ├── quest_widgets.py       # Widget UI per quest/milestone/achievement
 │   └── video_action_dialog.py # Dialog input azione video
 │
@@ -61,7 +61,15 @@ luna-rpg-v3/
 │   └── visual_director.txt
 │
 ├── worlds/                    # Mondi di gioco (YAML v3)
-│   ├── school_life_v3.yaml    # High School Harem + Quest System
+│   ├── school_life_modular/   # NEW: Modular folder structure
+│   │   ├── _meta.yaml         # World metadata, player
+│   │   ├── luna.yaml          # Luna + quests + milestones
+│   │   ├── stella.yaml        # Stella + quests + milestones
+│   │   ├── maria.yaml         # Maria + quests + milestones
+│   │   ├── locations.yaml     # 16 game locations
+│   │   ├── time.yaml          # Time system
+│   │   └── global_events.yaml # Weather & events
+│   ├── school_life_v3.yaml    # Legacy monolithic (backward compat)
 │   ├── fantasy_dark.yaml
 │   └── cyberpunk_noir.yaml
 │
@@ -474,7 +482,7 @@ for m in milestones:
 
 ---
 
-## 🎮 Feature Complete List v3.1
+## 🎮 Feature Complete List v3.2
 
 - ✅ Predictive Scene Analysis
 - ✅ Multi-provider LLM (Moonshot + Gemini)
@@ -482,18 +490,344 @@ for m in milestones:
 - ✅ Memory compression
 - ✅ Outfit switching
 - ✅ Anti-fusion multi-char
-- ✅ Video generation (Wan2.1)
+- ✅ Video generation (Wan2.1) with custom actions
 - ✅ TTS
-- ✅ Save/Load database
+- ✅ **Save/Load database** (SQLite + SQLAlchemy async)
 - ✅ **Quest System v3** (state machine YAML)
 - ✅ **Personality System** (emotional states)
 - ✅ **Milestones & Endgame**
 - ✅ **Achievement System**
 - ✅ **Quest Tracker UI**
-- ✅ **Harem Progress UI**
+- ✅ **Harem Progress UI** (dynamic, N companion support)
 - ✅ RunPod cloud support
+- ✅ **Modular World System** (folder-based, selective loading)
+- ✅ **PersonalityEngine** (behavioral tracking, impressions, NPC links)
+- ✅ **LLM Output Validation** (Python as source of truth)
+- ✅ **Startup Dialog** (New Game / Load Game / Settings tabs)
 
 ---
 
-**Ultimo aggiornamento**: Feb 2026 (Sessione: Quest System v3 + Personality System + Achievement System)
-**Versione**: 3.1.0
+## 📦 Modular World System (NUOVO - Feb 2026)
+
+**Split monolithic YAML into maintainable components:**
+
+### File Structure
+```
+worlds/
+├── school_life_v3.yaml          # Legacy monolithic (backward compat)
+└── school_life_modular/         # NEW: Modular folder structure
+    ├── _meta.yaml               # World metadata, player character, endgame
+    ├── luna.yaml                # Luna character + quests + milestones
+    ├── stella.yaml              # Stella character + quests + milestones  
+    ├── maria.yaml               # Maria character + quests + milestones
+    ├── locations.yaml           # 16+ game locations
+    ├── time.yaml                # Time system configuration
+    └── global_events.yaml       # Weather, school events, social dynamics
+```
+
+### Loader Auto-Detection
+```python
+def load_world(self, world_id: str) -> Optional[Dict[str, Any]]:
+    folder_path = self.worlds_path / world_id
+    if folder_path.exists() and folder_path.is_dir():
+        return self._load_modular_world(folder_path, world_id)
+    else:
+        return self._load_legacy_world(self.worlds_path / f"{world_id}.yaml", world_id)
+```
+
+### Benefits
+- **Reduced LLM tokens**: Load only active companion's full psychology
+- **Parallel editing**: Multiple authors can work on different characters
+- **Version control**: Track changes per character/location
+- **Selective loading**: Load summaries of inactive companions
+
+---
+
+## 🧠 PersonalityEngine (NUOVO - Feb 2026)
+
+**Dynamic psychological tracking of player behavior:**
+
+### BehavioralMemory
+```python
+@dataclass
+class BehavioralMemory:
+    aggressive: Dict[str, int]   # "subtle" -> count
+    shy: Dict[str, int]
+    romantic: Dict[str, int]
+    dominant: Dict[str, int]
+    kind: Dict[str, int]
+    
+    def get_dominant_traits(self) -> List[Tuple[str, str]]:
+        # Returns [("romantic", "strong"), ("aggressive", "subtle")]
+```
+
+### Impressions System
+5-dimensional emotional state per companion (-100 to +100):
+- **Trust**: Credibility of player
+- **Attraction**: Romantic/sexual interest
+- **Fear**: Intimidation level
+- **Curiosity**: Interest in discovering more
+- **Dominance**: Who holds power in relationship
+
+### NPC Relationship Matrix
+```python
+class NPCLinks:
+    def __init__(self):
+        self.links: Dict[str, Dict[str, LinkData]] = {
+            "Luna": {
+                "Stella": LinkData(jealousy=0.7, awareness=0.3),
+                "Maria": LinkData(gossip_target=0.9)
+            }
+        }
+```
+
+### Usage in Engine
+```python
+# Step 0: Analyze behavior
+if self.personality_engine:
+    analysis = self.personality_engine.analyze_player_action(
+        self.state.current.companion_name, 
+        user_input, 
+        self.state.current.turn_count
+    )
+    # Returns: detected traits, impression changes, archetype hints
+
+# Step 3: Build English personality context for LLM
+personality_context = self.personality_engine.get_psychological_context(
+    companion_name,
+    include_behavioral=True,
+    include_impressions=True,
+    include_links=True
+)
+```
+
+---
+
+## ✅ LLM Output Validation (NUOVO - Feb 2026)
+
+**Python is source of truth. LLM suggests, Python validates.**
+
+### Validation Rules
+```python
+def _validate_llm_updates(self, updates: Dict[str, Any]) -> Dict[str, Any]:
+    validated = {}
+    
+    # 1. Affinity clamped (-5 to +5 per turn)
+    if "affinity" in updates:
+        for char, delta in updates["affinity"].items():
+            validated["affinity"][char] = max(-5, min(5, delta))
+    
+    # 2. Outfits must exist in character wardrobe
+    if "current_outfit" in updates:
+        wardrobe = self.world_data["companions"][companion]["wardrobe"].keys()
+        if updates["current_outfit"] not in wardrobe:
+            validated["current_outfit"] = self.state.current.outfit  # Keep current
+    
+    # 3. Locations must be defined
+    if "location" in updates:
+        valid_locations = [loc["id"] for loc in self.world_data.get("locations", [])]
+        if updates["location"] not in valid_locations:
+            validated["location"] = self.state.current.location
+    
+    # 4. Flags must be whitelisted or start with allowed prefixes
+    if "flags" in updates:
+        for flag in updates["flags"]:
+            if not self._is_valid_flag(flag):
+                continue  # Skip invalid flags
+            validated["flags"][flag] = updates["flags"][flag]
+    
+    return validated
+```
+
+### Anti-Hallucination Strategy
+1. **Read-only context**: LLM receives psychological state as text, cannot modify directly
+2. **Suggestion-only**: LLM outputs `updates` dict, Python validates & applies
+3. **Wardrobe enforcement**: Outfit changes must reference valid wardrobe keys
+4. **Flag prefix whitelist**: Only `luna_*`, `stella_*`, `maria_*`, `player_*`, `quest_*` allowed
+
+---
+
+## 🖥️ UI Components & Patterns (v3.2)
+
+### StartupDialog Flow
+```python
+# Inizializzazione in _async_init()
+await self.engine.initialize_database()
+dialog = StartupDialog(self)
+dialog.load_saves_sync()  # Carica salvataggi dal DB
+
+# Struttura tabs:
+# - [GM] New Game: selezione mondo/companion
+# - [L] Load Game: lista salvataggi da database
+# - ⚙️ Settings: RunPod/Local mode
+```
+
+### UI Widgets Dinamici
+
+#### HaremProgressWidget (Dinamico v3.2)
+```python
+# Inizializzazione con lista companion del mondo
+companion_names = list(companions.keys())
+self.harem_progress.set_companions(companion_names)
+
+# Aggiornamento progresso
+self.harem_progress.update_progress(conquered_list)  # ["Luna", "Stella"]
+```
+
+#### QuestEngine.get_ui_milestone_status()
+```python
+# Metodo per ottenere milestone formattati per UI
+milestones = self.quest_engine.get_ui_milestone_status(
+    "Luna", game_state
+)
+# Returns: [{"id": "luna_trust", "name": "Her Trust", "icon": "🔓", "reached": True}, ...]
+```
+
+### Pattern Fix v3.2
+
+#### Fix: PersonalityEngine Pydantic Access
+```python
+# ❌ ERRATO (tratta Pydantic model come dict)
+config = companions_dict.get(c1)  # CompanionV3Config
+psych = config.get("psychology", {})  # AttributeError!
+
+# ✅ CORRETTO (dot notation per Pydantic)
+if config and config.personality_system:
+    rel_config = config.personality_system.relationship.get(c2, {})
+```
+
+#### Fix: Video Action Parameter
+```python
+# ❌ ERRATO (hardcoded)
+video_path = await self.engine.generate_video(
+    image, action="posing", ...  # Ignora input utente
+)
+
+# ✅ CORRETTO (usa input utente)
+user_action = dialog.get_action() or "posing"
+video_path = await self.engine.generate_video(
+    image, action=user_action, user_action=user_action, ...
+)
+```
+
+---
+
+## 🎭 Dialogue Tone System (NUOVO - Feb 2026)
+
+**Tono di voce modulare per personaggio, basato su affinità.**
+
+### YAML Structure (per personaggio)
+```yaml
+dialogue_tone:
+  base: "Descrizione base del tono"
+  
+  affinity_tiers:
+    0-25:
+      name: "Tier Name"
+      tone: "Descrizione specifica del tono"
+      examples:
+        - "Frase esempio 1"
+        - "Frase esempio 2"
+      voice_markers:
+        - "Usa 'Lei' formale"
+        - "Cognomi solo"
+    
+    26-50:
+      name: "Tier Name"
+      tone: "..."
+      examples: [...]
+      voice_markers: [...]
+```
+
+### Esempio: Luna (Teacher)
+| Affinità | Tier | Tono | Frasi Esempio |
+|----------|------|------|---------------|
+| 0-25 | The Strict Teacher | Ghiaccio, formale | "Signor..., lei è in ritardo" |
+| 26-50 | The Caring Teacher | Professionale ma osservante | "Ha studiato, signor...?" |
+| 51-75 | The Private Tutor | Calda, usa nome | "Enrico... mi sorprende" |
+| 76-100 | The Forbidden Affair | Intima, sussurrata | "Chiamami Luna..." |
+
+### Esempio: Stella (Student)
+| Affinità | Tier | Tono | Frasi Esempio |
+|----------|------|------|---------------|
+| 0-20 | The Snob | Sfacciata, "loser" | "Ehi tu, spostati. Sfigato" |
+| 21-50 | The Tsundere | Balbuzie, nega | "N-non è che mi importi!" |
+| 51-80 | The Girlfriend | Gelosa, appiccicosa | "Chi è quella che ti guardava?" |
+| 81-100 | The Lover | Dichiarazioni | "Ti amo, idiota. Voglio che tu sia il mio primo" |
+
+### Esempio: Maria (Nurse)
+| Affinità | Tier | Tono | Frasi Esempio |
+|----------|------|------|---------------|
+| 0-25 | The Professional | Distaccata medica | "Si accomodi, signor..." |
+| 26-50 | The Caring | Materna, tocco lungo | "Povero... vieni qui, lascia che ti coccoli" |
+| 51-75 | The Temptress | Doppi sensi medici | "Questo è un trattamento speciale..." |
+| 76-100 | The Obsessive | Possessiva, yandere | "Non ti curo più... ti TERRO qui" |
+
+### Dynamic Loading
+```python
+# In engine.py
+self._build_dialogue_tone(char_name, current_aff)
+
+# Seleziona automaticamente il tier corretto in base all'affinità
+# Genera testo con esempi e voice markers per l'LLM
+```
+
+---
+
+## 👤 NPC Generici Support (Feb 2026)
+
+**Supporto per personaggi non-companion (bibliotecaria, infermiere, ecc.)**
+
+### Problema Risolto
+Prima: NPC generici venivano renderizzati con LoRA di Luna (sbagliato!)
+Dopo: NPC generici usano `NPC_BASE` senza LoRA personaggio-specifici
+
+### Meccanismo
+```python
+# single_builder.py
+known_companions = {"Luna", "Stella", "Maria"}
+is_known_companion = char_name in known_companions
+
+if is_known_companion:
+    base_raw = BASE_PROMPTS[char_name]  # Con LoRA specifico
+else:
+    base_raw = NPC_BASE  # Generico, senza LoRA
+```
+
+### Scene Analyzer Fix
+```python
+# scene_analyzer.py - NON forzare primary_subject a None
+if primary and primary not in available:
+    # Prima: primary = None  ❌
+    # Dopo: mantieni primary  ✅ (permette "bibliotecaria")
+```
+
+### Engine Fix
+```python
+# _build_scene_analysis_from_response
+predicted_subject = predictive_analysis.get("primary_subject")
+if predicted_subject:
+    primary = predicted_subject  # Usa il soggetto predetto
+else:
+    primary = self.state.current.companion_name  # Fallback
+```
+
+---
+
+## 🐛 Bug Fixes (Feb 2026)
+
+| Fix | File | Descrizione |
+|-----|------|-------------|
+| **Dialogue Tone System** | `luna.yaml`, `stella.yaml`, `maria.yaml` | Tono modulare per affinità |
+| **Dialogue Tone Loader** | `world_loader.py` | Caricamento dialogue_tone dinamico |
+| **Dialogue Tone Engine** | `engine.py` | `_build_dialogue_tone()` method |
+| **NPC Generic Support** | `single_builder.py`, `scene_analyzer.py` | Supporto personaggi non-companion |
+| **LoRA Stella Fix** | `comfy_image_client.py` | Stella usa `alice_milf_catchers` non `stsDebbie` |
+| **Affinity Companion Name** | `llm_client.py` | Fix `companion_name` param per affinity_change |
+| **Scene Primary Subject** | `engine.py` | Usa `predicted_subject` se disponibile |
+| **Outfit sd_prompt** | `base.py` | Usa `sd_prompt` dal YAML se disponibile |
+
+---
+
+**Ultimo aggiornamento**: Feb 2026 (Dialogue Tone System, NPC Generic Support, Bug Fixes)
+**Versione**: 3.3.0-dialogue-tone

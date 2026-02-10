@@ -204,7 +204,8 @@ Generate detailed temporal descriptions focusing on motion, camera work, and phy
                 print(f"    User action: {user_action[:60]}...")
             
             response = await llm_client.generate_response(
-                user_input=user, system_instruction=system, history=[]
+                user_input=user, system_instruction=system, history=[],
+                companion_name=character
             )
             text = response.text.strip().replace("```", "")
             
@@ -248,7 +249,8 @@ Generate detailed temporal descriptions focusing on motion, camera work, and phy
         """
         
         if not self.settings.video_available:
-            print("[Video] RunPod richiesto")
+            print("[Video] Video generation disabilitata in modalità LOCAL")
+            print("[Video] Richiede RunPod con ComfyUI configurato")
             return None
         
         comfy_url = self.settings.comfy_url
@@ -280,11 +282,7 @@ Generate detailed temporal descriptions focusing on motion, camera work, and phy
             async with aiofiles.open(self.workflow_path, "r", encoding="utf-8") as f:
                 workflow = json.loads(await f.read())
             
-            # Patch workflow
-            if "1" in workflow:
-                workflow["1"]["inputs"]["image"] = image_path.name
-            
-            # Trova e patch positive prompt (nodo 6)
+            # Trova e patch positive prompt (nodo 6) PRIMA di rimuovere _meta
             for nid, node in workflow.items():
                 if node.get("class_type") == "CLIPTextEncode":
                     title = node.get("_meta", {}).get("title", "")
@@ -292,6 +290,15 @@ Generate detailed temporal descriptions focusing on motion, camera work, and phy
                         node["inputs"]["text"] = final_prompt
                         print(f"  [Patch] Prompt positivo ({nid})")
                         break
+            
+            # Rimuovi _meta da tutti i nodi (causa errori 400)
+            for node_id in list(workflow.keys()):
+                if "_meta" in workflow[node_id]:
+                    del workflow[node_id]["_meta"]
+            
+            # Patch workflow
+            if "1" in workflow:
+                workflow["1"]["inputs"]["image"] = image_path.name
             
             # Patch risoluzione e batch
             if "8" in workflow:
@@ -301,6 +308,11 @@ Generate detailed temporal descriptions focusing on motion, camera work, and phy
                 if "end_image" in workflow["8"]["inputs"]:
                     del workflow["8"]["inputs"]["end_image"]
                 print("  [Patch] Risoluzione: 512x768")
+            
+            # Patch filename_prefix per tracciamento su RunPod
+            if "12" in workflow:
+                workflow["12"]["inputs"]["filename_prefix"] = f"{character}_Video"
+                print(f"  [Patch] Filename prefix: {character}_Video")
             
             # NOTA: FreeMemory node non e' standard, lo gestiamo via API dopo
             
@@ -330,7 +342,9 @@ Generate detailed temporal descriptions focusing on motion, camera work, and phy
                     timeout=30
                 ) as r:
                     if r.status != 200:
+                        error_text = await r.text()
                         print(f"[Video] Queue failed: {r.status}")
+                        print(f"[Video] Error: {error_text[:500]}")
                         return None
                     data = await r.json()
                     prompt_id = data.get("prompt_id")

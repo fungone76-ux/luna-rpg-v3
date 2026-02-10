@@ -1,0 +1,237 @@
+# ============================================================
+# LOCATIONS - School Life v3
+# 16 immersive locations
+# ============================================================
+
+locations:
+  - id: "Entrance"
+    name: "School Entrance"
+    description: "The main gate, cherry blossoms in spring, students streaming in and out"
+    visual_tags: ["cherry_blossoms", "morning_light", "crowded", "school_gate"]
+    allowed_times: ["Morning", "Afternoon", "Evening"]
+    bgm: "sunny_campus"
+    lighting: "daylight"
+    default_camera_angle: "wide_shot"
+    default_shot_type: "establishing"
+    atmosphere: "bustling, energetic"
+
+  - id: "Main Hallway"
+    name: "Main Hallway"
+    description: "Long corridors lined with lockers, bulletin boards with announcements"
+    visual_tags: ["lockers", "posters", "natural_light", "crowded"]
+    allowed_times: ["Morning", "Afternoon", "Evening"]
+    bgm: "school_ambience"
+    lighting: "indoor_day"
+    default_camera_angle: "medium"
+    default_shot_type: "tracking"
+    atmosphere: "social, transitional"
+
+  - id: "Classroom"
+    name: "Classroom 2-A"
+    description: "Desks in rows, large windows, teacher's desk at front"
+    visual_tags: ["desks", "blackboard", "sunlight", "textbooks"]
+    allowed_times: ["Morning", "Afternoon"]
+    bgm: "classroom"
+    lighting: "indoor_bright"
+    default_camera_angle: "medium"
+    default_shot_type: "close_up"
+    atmosphere: "academic, structured"
+
+  - id: "Teachers Lounge"
+    name: "Teachers Lounge"
+    description: "Comfortable sofas, coffee machine, Luna's territory"
+    visual_tags: ["couches", "coffee_table", "warm_lighting", "adult_space"]
+    allowed_times: ["Morning", "Afternoon", "Evening"]
+    bgm: "relaxed"
+    lighting: "warm_indoor"
+    default_camera_angle: "medium"
+    default_shot_type: "medium_shot"
+    atmosphere: "private, intimate"
+
+  - id: "Gym"
+    name: "School Gym"
+    description: "Basketball court, bleachers, echoey space"
+    visual_tags: ["basketball_hoop", "wood_floor", "high_ceiling", "sports"]
+    allowed_times: ["Morning", "Afternoon"]
+    bgm: "energetic"
+    lighting: "indoor_bright"
+    default_camera_angle: "wide"
+    default_shot_type: "wide_shot"
+    atmosphere: "active, competitive"
+
+  - id: "Pool"
+    name: "Swimming Pool"
+    description: "Olympic-size pool, locker rooms nearby"
+    visual_tags: ["water", "swimsuits", "steam", "chlorine"]
+    allowed_times: ["Morning", "Afternoon"]
+    bgm: "pool_ambience"
+    lighting: "bright_indoor"
+    default_camera_angle: "medium"
+    default_shot_type: "medium_shot"
+    atmosphere: "refreshing, revealing"
+
+  - id: "Library"
+    name: "School Library"
+    description: "Rows of books, reading tables, soft silence"
+    visual_tags: ["bookshelves", "reading_lamps", "dust_motes", "quiet"]
+    allowed_times: ["Morning", "Afternoon", "Evening"]
+    bgm: "quiet_study"
+    lighting: "soft_indoor"
+    default_camera_angle: "medium"
+    default_shot_type: "close_up"
+    atmosphere: "scholarly, private"
+
+  - id: "Cafeteria"
+    name: "School Cafeteria"
+    description: "Long tables, food counters, social hub"
+    visual_tags: ["tables", "food", "windows", "social"]
+    allowed_times: ["Morning", "Afternoon"]
+    bgm: "busy_crowd"
+    lighting: "indoor_bright"
+    default_camera_angle: "medium"
+    default_shot_type: "medium_shot"
+    atmosphere: "social, casual"
+
+  - id: "Rooftop"
+    name: "School Rooftop"
+    description: "Forbidden access, city view, private meetings"
+    visual_tags: ["sky", "fence", "concrete", "exclusive"]
+    allowed_times: ["Afternoon", "Evening"]
+    bgm: "peaceful"
+    lighting: "golden_hour"
+    default_camera_angle: "wide"
+    default_shot_type: "wide_shot"
+    atmosphere: "romantic, isolated"
+
+  - id: "Infirmary"
+    name: "Nurse Office"
+    description: "Medical beds, cabinets of supplies, Luna's domain"
+    visual_tags: ["bed", "white_sheets", "medical_supplies", "privacy"]
+    allowed_times: ["Morning", "Afternoon", "Evening"]
+    bgm: "calm"
+    lighting: "soft_white"
+    default_camera_angle: "medium"
+    default_shot_type: "close_up"
+    atmosphere: "intimate, vulnerable"
+
+  - id: "Stadium"
+    name: "Sports Field"
+    description: "Track and field, bleachers, open sky"
+    visual_tags: ["grass", "track", "bleachers", "outdoor"]
+    allowed_times: ["Morning", "Afternoon"]
+    bgm: "outdoor"
+    lighting: "sunlight"
+    default_camera_angle: "wide"
+    default_shot_type: "wide_shot"
+    atmosphere: "open, athletic"
+
+  - id: "Storage Room"
+    name: "Janitor's Closet"
+    description: "Cleaning supplies, hidden nook, Maria's refuge"
+    visual_tags: ["shelves", "dim_light", "cramped", "secret"]
+    allowed_times: ["Morning", "Afternoon", "Evening"]
+    bgm: "mysterious"
+    lighting: "dim_indoor"
+    default_camera_angle: "medium"
+    default_shot_type: "close_up"
+    atmosphere: "hidden, intimate"
+
+  - id: "Music Room"
+    name: "Music Room"
+    description: "Piano, instruments, soundproof walls"
+    visual_tags: ["piano", "sheet_music", "acoustic", "artistic"]
+    allowed_times: ["Morning", "Afternoon", "Evening"]
+    bgm: "melodic"
+    lighting: "warm_indoor"
+    default_camera_angle: "medium"
+    default_shot_type: "medium_shot"
+    atmosphere: "artistic, acoustic"
+
+  - id: "Science Lab"
+    name: "Science Lab"
+    description: "Lab tables, equipment, chemical smells"
+    visual_tags: ["beakers", "bunsen_burner", "stools", "academic"]
+    allowed_times: ["Morning", "Afternoon"]
+    bgm: "focused"
+    lighting: "fluorescent"
+    default_camera_angle: "medium"
+    default_shot_type: "medium_shot"
+    atmosphere: "sterile, focused"
+
+  - id: "Shower Room"
+    name: "Locker Room"
+    description: "Showers, changing areas, steam and mirrors"
+    visual_tags: ["tiles", "steam", "lockers", "intimate"]
+    allowed_times: ["Morning", "Afternoon"]
+    bgm: "water_ambience"
+    lighting: "fluorescent"
+    default_camera_angle: "medium"
+    default_shot_type: "close_up"
+    atmosphere: "vulnerable, steamy"
+
+  - id: "Park"
+    name: "Nearby Park"
+    description: "Trees, benches, walking paths after school"
+    visual_tags: ["trees", "grass", "benches", "nature"]
+    allowed_times: ["Afternoon", "Evening"]
+    bgm: "nature"
+    lighting: "natural"
+    default_camera_angle: "wide"
+    default_shot_type: "wide_shot"
+    atmosphere: "peaceful, romantic"
+
+# Special locations (for specific quests)
+  - id: "Shopping Mall"
+    name: "Shopping Mall"
+    description: "Department stores, food court, teenagers"
+    visual_tags: ["neon_lights", "crowds", "shops", "urban"]
+    allowed_times: ["Afternoon", "Evening"]
+    bgm: "mall_music"
+    lighting: "bright_neon"
+    default_camera_angle: "medium"
+    default_shot_type: "medium_shot"
+    atmosphere: "commercial, lively"
+
+  - id: "Movie Theater"
+    name: "Cinema Complex"
+    description: "Dark theaters, popcorn, movie dates"
+    visual_tags: ["dark_room", "screen", "seats", "private"]
+    allowed_times: ["Afternoon", "Evening"]
+    bgm: "movie_trailer"
+    lighting: "dark_theater"
+    default_camera_angle: "medium"
+    default_shot_type: "close_up"
+    atmosphere: "dark, intimate"
+
+  - id: "Stella Bedroom"
+    name: "Stella's Bedroom"
+    description: "Rich girl's room, pink, huge closet"
+    visual_tags: ["pink_decor", "mirror", "bed", "luxury"]
+    allowed_times: ["Afternoon", "Evening"]
+    bgm: "pop_music"
+    lighting: "warm_indoor"
+    default_camera_angle: "medium"
+    default_shot_type: "medium_shot"
+    atmosphere: "private, feminine"
+
+  - id: "Maria's Apartment"
+    name: "Maria's Home"
+    description: "Cozy, lived-in, smells of cooking"
+    visual_tags: ["comfortable", "kitchen", "pictures", "warm"]
+    allowed_times: ["Afternoon", "Evening", "Night"]
+    bgm: "home_comfort"
+    lighting: "warm_indoor"
+    default_camera_angle: "medium"
+    default_shot_type: "medium_shot"
+    atmosphere: "domestic, cozy"
+
+  - id: "School Festival"
+    name: "Festival Grounds"
+    description: "Food stalls, decorations, lanterns at night"
+    visual_tags: ["lanterns", "crowds", "food_stalls", "festive"]
+    allowed_times: ["Afternoon", "Evening"]
+    bgm: "festival_music"
+    lighting: "lantern_light"
+    default_camera_angle: "wide"
+    default_shot_type: "wide_shot"
+    atmosphere: "festive, magical"

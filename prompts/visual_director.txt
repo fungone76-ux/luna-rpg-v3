@@ -5,6 +5,25 @@
 **PHOTOGRAPHIC LOGIC:**
 SD generates a SINGLE STATIC IMAGE, not a video. Think "frozen photograph".
 
+**NPC/GENERIC CHARACTERS (CRITICAL):**
+When the scene features a character who is NOT Luna/Stella/Maria (e.g., a librarian, nurse, student, teacher, stranger):
+1. **DESCRIBE THEIR APPEARANCE**: You MUST describe their look in visual_en: hair color/style, age, body type, outfit, distinguishing features
+   Example: "Medium shot, mature librarian with silver hair in bun, black pencil skirt, reaching for book, glasses"
+2. **USE GENERIC SUBJECT**: Set primary_subject to a descriptive name like "librarian", "nurse", "student" - NOT Luna
+3. **NO CHARACTER LoRAs**: Do NOT use stsdebbie/stssmith tags for generic NPCs
+4. **FULL VISUAL DESCRIPTION**: Since generic NPCs have no base prompt, you MUST fully describe them in visual_en
+
+Example - Librarian NPC:
+```
+VISUAL: Medium shot from eye level, mature woman with silver-gray hair in tight bun, thin wire-rim glasses, charcoal pencil skirt and white blouse, reaching for book on high shelf, library afternoon light
+
+TAGS: medium shot, eye level, mature woman, silver hair, glasses, pencil skirt, reaching up, library, bookshelf, afternoon light, masterpiece
+
+BODY_FOCUS: torso
+
+APPROACH: standard
+```
+
 **COHERENCE RULE (CRITICAL):**
 Tags and visual_en MUST agree! If tags say `standing`, visual must describe standing.
 ❌ BAD: tags=["seated"] + visual="Luna walking toward you"

@@ -67,7 +67,7 @@ class ComfyImageClient:
             # 3. Seleziona LoRA corretto (nomi esatti dal server) + pesi originali
             lora_config = {
                 "Luna": ("stsDebbie-10e.safetensors", 0.7),
-                "Stella": ("stsDebbie-10e.safetensors", 0.7),
+                "Stella": ("alice_milf_catchers_lora.safetensors", 0.7),
                 "Maria": ("stsSmith-10e.safetensors", 0.65)
             }
             lora_name, lora_strength = lora_config.get(character_name, ("stsDebbie-10e.safetensors", 0.7))
@@ -107,7 +107,25 @@ class ComfyImageClient:
             workflow["2"]["inputs"]["clip"] = ["24", 1]
             workflow["3"]["inputs"]["clip"] = ["24", 1]
             
-            # 4. Invia a ComfyUI
+            # 4. LOG PROMPT COMPLETO
+            print(f"\n{'='*60}")
+            print(f"[COMFYUI PROMPT - {character_name}]")
+            print(f"{'='*60}")
+            print(f"Checkpoint: {workflow['1']['inputs']['ckpt_name']}")
+            print(f"Size: {prompt_result.width}x{prompt_result.height}")
+            print(f"Seed: {workflow['4']['inputs']['noise_seed']}")
+            print(f"Scheduler: {workflow['6']['inputs']['scheduler']}")
+            print(f"\n--- LoRA Stack ---")
+            print(f"  1. {workflow['20']['inputs']['lora_name']} (strength: {workflow['20']['inputs']['strength_model']})")
+            print(f"  2. {workflow['23']['inputs']['lora_name']} (strength: {workflow['23']['inputs']['strength_model']})")
+            print(f"  3. {workflow['24']['inputs']['lora_name']} (strength: {workflow['24']['inputs']['strength_model']})")
+            print(f"\n--- Positive Prompt ---")
+            print(prompt_result.positive)
+            print(f"\n--- Negative Prompt ---")
+            print(prompt_result.negative)
+            print(f"{'='*60}\n")
+            
+            # 5. Invia a ComfyUI
             print(f"[ComfyImage] Generating {character_name}...")
             async with aiohttp.ClientSession(timeout=self.timeout) as session:
                 async with session.post(

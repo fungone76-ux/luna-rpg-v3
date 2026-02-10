@@ -1,0 +1,151 @@
+# ============================================================
+# LUNA RPG v3 - WORLD CONFIGURATION
+# File: worlds/school_life_modular/_meta.yaml
+# Version: 3.0 Complete
+# ============================================================
+
+# ============================================================
+# 1. META (Obbligatorio)
+# ============================================================
+meta:
+  id: "school_life"
+  name: "High School Harem - Complete Edition"
+  genre: "Dating Sim, School Life, Romance, Erotic (18+)"
+  version: "3.0.0"
+  author: "Luna RPG Team"
+  
+  world_lore: |
+    Setting: "Da Vinci" High School. Spring Term.
+    A prestigious institute where desire hides behind respectable facades.
+    The school has a secret history of forbidden encounters between staff and students.
+    A place where power dynamics and attraction create dangerous temptations.
+    
+  timeline:
+    start_day: 1
+    time_cycle: ["Morning", "Afternoon", "Evening", "Night"]
+    days_of_week: ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"]
+
+# ============================================================
+# 2. NPC LOGIC (Obbligatorio)
+# ============================================================
+npc_logic:
+  female_hints: 
+    - "nurse"
+    - "librarian"
+    - "student girl"
+    - "teacher lady"
+    - "secretary"
+    - "cheerleader"
+  male_hints: 
+    - "coach"
+    - "janitor"
+    - "principal man"
+    - "student boy"
+    - "security"
+
+# ============================================================
+# 2.5 PLAYER CHARACTER (Il Protagonista)
+# ============================================================
+player_character:
+  identity:
+    name: "Transfer Student"
+    age: 18
+    gender: "male"
+    background: |
+      You are a transfer student who just arrived at Da Vinci High School.
+      It's your first day at this prestigious new school.
+      You know no one, but you've immediately noticed three particular women:
+      a strict but fascinating teacher, a popular blonde student,
+      and a mature cleaning lady with an aura of mystery.
+      You've decided this school will be your new treasure hunt.
+  
+  main_objective:
+    title: "The Da Vinci Harem"
+    description: |
+      Conquer the heart (and body) of all three protagonists:
+      Luna (Teacher, 43), Stella (Student, 18), and Maria (Cleaning Lady, 55).
+      Each has a different personality, requires different approaches, and hides secrets to discover.
+      The more you seduce one, the more the others might notice your "activity".
+      Manage relationships carefully to avoid premature jealousy.
+  
+  targets:
+    - name: "Luna"
+      role: "Teacher (Italian Literature)"
+      age: 43
+      appeal: "Your strict but fascinating teacher. She looks at you from above her desk. Passionate about literature."
+      challenge: "You are her student: she must maintain appearances. Seduce her without getting caught."
+      first_meeting: "Classroom 3B - first day of school, she enters with books, looks at you and marks attendance"
+    
+    - name: "Stella"
+      role: "Student"
+      age: 18
+      appeal: "Popular, blonde, tsundere. The most desired girl in school."
+      challenge: "You're not the first to try. You must be different from the others."
+      first_meeting: "Hallway - you accidentally bump into her, she drops her books"
+    
+    - name: "Maria"
+      role: "Cleaning Lady"
+      age: 58
+      appeal: "Mature, direct, mysterious. Knows all the school's secrets after 30 years of cleaning."
+      challenge: "Not easily impressed. Requires patience and authenticity."
+      first_meeting: "Teachers' lounge - she's cleaning, offers you coffee"
+  
+  starting_situation:
+    location: "School Gate"
+    time: "Morning"
+    context: |
+      First day. You hold your enrollment papers in hand.
+      You feel watched as you cross the gate.
+      You don't know yet that this school will change your life.
+      The three women you'll meet today will become your obsession.
+  
+  relationships_start:
+    default_affinity: 0
+    reputation: "the new mysterious transfer student"
+    known_characters: []
+  
+  implicit_goals:
+    - "Seduce Luna by breaking through her authority shell"
+    - "Conquer Stella by distinguishing yourself from her admirers"
+    - "Get close to Maria by discovering her secrets"
+    - "Manage all three relationships simultaneously without getting caught"
+    - "Achieve the Harem Ending with all three"
+  
+  constraints:
+    - "You cannot be too direct at first (would seem strange)"
+    - "You must maintain appearances (model student)"
+    - "You are unknown: you must build credibility"
+    - "Jealousy: if you spend too much time with one, the others pull away"
+  
+  personality_hints:
+    default_tone: "charming but respectful"
+    archetype: "ambitious_seducer"
+    approach_style: "strategico - osserva prima, agisci dopo"
+
+# ============================================================
+# 6. ENDGAME
+# ============================================================
+endgame:
+  description: "The True Harem Ending - Conquer all three companions"
+  victory_conditions:
+    - type: "companion_conquered"
+      target: "Luna"
+      requires:
+        - affinity: 100
+        - flag: "luna_confessed_love"
+    
+    - type: "companion_conquered"
+      target: "Stella"
+      requires:
+        - affinity: 100
+        - flag: "stella_confessed_love"
+    
+    - type: "companion_conquered"
+      target: "Maria"
+      requires:
+        - affinity: 100
+        - flag: "maria_accepted_young_lover"
+  
+  ui_indicators:
+    heart_icon: "❤️"
+    conquered_icon: "✅"

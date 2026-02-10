@@ -74,13 +74,30 @@ class PersonalityTier(BaseModel):
     description: str
 
 
+class OutfitDefinition(BaseModel):
+    """Definizione outfit con description e opzionale sd_prompt."""
+    model_config = ConfigDict(extra='allow')  # Permette campi extra
+    
+    description: str
+    sd_prompt: Optional[str] = None  # Prompt specifico per SD/ComfyUI
+
+
 class CompanionConfig(BaseModel):
-    """Configurazione di un companion dallo YAML."""
+    """Configurazione di un companion dallo YAML.
+    
+    Supporta sia formato legacy (wardrobe: Dict[str, str]) 
+    che formato nuovo (wardrobe: Dict[str, OutfitDefinition]).
+    """
+    model_config = ConfigDict(extra='allow')  # Per backward compatibility
+    
     name: str
     base_prompt: str  # LoRA e trigger words specifici
     default_outfit: str
-    wardrobe: Dict[str, str]
-    personality_tiers: List[PersonalityTier]
+    # Supporta entrambi i formati: legacy (stringa) e nuovo (dict con sd_prompt)
+    wardrobe: Dict[str, Any]
+    personality_tiers: List[PersonalityTier] = Field(default_factory=list)
+    # NUOVO: Dialogue tone modulare
+    dialogue_tone: Optional[Dict[str, Any]] = None
 
 
 class NPCLogic(BaseModel):

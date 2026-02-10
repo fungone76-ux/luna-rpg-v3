@@ -135,7 +135,7 @@ companions:
     base_prompt: "score_9, score_8_up, masterpiece, photorealistic, detailed, atmospheric, stsdebbie, dynamic pose, 1girl, mature woman, brown hair, shiny skin, head tilt, massive breasts, cleavage, <lora:stsDebbie-10e:0.7> <lora:Expressive_H-000001:0.20> <lora:FantasyWorldPonyV2:0.40>"
     
     wardrobe:
-      teacher_suit: "Elegant formal teacher dress, sober but feminine, discreet jewelry"
+      teacher_suit: "teacher dress, sober but feminine "
       strict_teacher: "Severe professional outfit, tight skirt, shirt buttoned to the top"
       casual_teacher: "Relaxed but refined look, soft sweater, more approachable attitude"
       gym_teacher: "Fitted tracksuit, fit body on display, athletic and sweaty appearance"

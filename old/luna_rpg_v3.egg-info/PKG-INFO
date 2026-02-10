@@ -1,0 +1,27 @@
+Metadata-Version: 2.4
+Name: luna-rpg-v3
+Version: 3.0.0
+Summary: Luna RPG v3 - Modern AI-Driven Visual Novel
+Requires-Python: >=3.11
+Requires-Dist: pydantic>=2.0
+Requires-Dist: pydantic-settings>=2.0
+Requires-Dist: sqlalchemy>=2.0
+Requires-Dist: aiosqlite>=0.19
+Requires-Dist: aiofiles>=23.0
+Requires-Dist: google-genai>=0.3
+Requires-Dist: google-cloud-texttospeech>=2.0
+Requires-Dist: httpx>=0.25
+Requires-Dist: aiohttp>=3.9
+Requires-Dist: websockets>=12.0
+Requires-Dist: pyside6>=6.6
+Requires-Dist: qasync>=0.27
+Requires-Dist: pyyaml>=6.0
+Requires-Dist: python-dotenv>=1.0
+Requires-Dist: pillow>=10.0
+Requires-Dist: pygame>=2.5
+Provides-Extra: dev
+Requires-Dist: pytest>=7.0; extra == "dev"
+Requires-Dist: pytest-asyncio>=0.21; extra == "dev"
+Requires-Dist: pytest-qt>=4.0; extra == "dev"
+Requires-Dist: mypy>=1.0; extra == "dev"
+Requires-Dist: ruff>=0.1; extra == "dev"

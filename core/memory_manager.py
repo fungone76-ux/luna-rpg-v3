@@ -65,16 +65,41 @@ class MemoryManager:
         db: AsyncSession, 
         limit: int = None
     ) -> List[dict]:
-        """Recupera history recente per LLM."""
+        """Recupera history gerarchica per LLM.
+        
+        Struttura:
+        - Ultimi 10 messaggi (dettaglio completo)
+        - Summary intermedi (overview)
+        """
         limit = limit or self.history_limit
-        messages = await self.db.get_recent_messages(
-            db, self.session_id, limit=limit
+        
+        # 1. Prendi ultimi 10 messaggi freschi
+        recent_limit = min(10, limit)
+        recent_messages = await self.db.get_recent_messages(
+            db, self.session_id, limit=recent_limit
         )
         
-        return [
-            {"role": msg.role, "content": msg.content}
-            for msg in messages
-        ]
+        # 2. Se abbiamo poco context, aggiungi summary
+        history = []
+        if len(recent_messages) < 5:
+            summaries = await self.db.get_memories(
+                db, self.session_id, mem_type="summary", limit=3
+            )
+            if summaries:
+                summary_text = "Previously: " + " | ".join([s.content for s in summaries])
+                history.append({
+                    "role": "system",
+                    "content": f"[Memory archive: {summary_text}]"
+                })
+        
+        # 3. Aggiungi messaggi recenti
+        for msg in recent_messages:
+            history.append({
+                "role": msg.role,
+                "content": msg.content
+            })
+        
+        return history
     
     async def add_message(
         self,
@@ -113,15 +138,18 @@ class MemoryManager:
         print(f"🧠 New fact: {fact}")
     
     async def _check_compression(self, db: AsyncSession):
-        """Controlla se history troppo lunga e comprime."""
+        """Controlla se history troppo lunga e comprime.
+        
+        Dopo il riassunto, cancella i messaggi originali per pulire il DB.
+        """
         messages = await self.db.get_recent_messages(
-            db, self.session_id, limit=self.history_limit + 10
+            db, self.session_id, limit=self.history_limit + self.prune_count
         )
         
         if len(messages) > self.history_limit:
             print(f"🧠 Memory buffer full ({len(messages)}), compressing...")
             
-            # Prendi i più vecchi da riassumere
+            # Prendi i più vecchi da riassumere (quelli da rimuovere)
             to_summarize = messages[:self.prune_count]
             
             # Genera riassunto
@@ -138,7 +166,12 @@ class MemoryManager:
                 await self.db.add_memory(
                     db, self.session_id, "summary", summary, turn_num
                 )
-                print(f"[OK] Archived: {summary[:60]}...")
+                
+                # NUOVO: Cancella i messaggi riassunti
+                message_ids = [m.id for m in to_summarize]
+                await self.db.delete_messages(db, message_ids)
+                
+                print(f"[OK] Archived {len(to_summarize)} messages: {summary[:60]}...")
     
     async def add_event(self, db: AsyncSession, event: str, turn_number: int):
         """Registra evento importante."""

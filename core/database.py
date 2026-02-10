@@ -42,6 +42,7 @@ class SessionModel(Base):
     inventory = Column(JSON, default=list)
     quest_log = Column(JSON, default=list)
     flags = Column(JSON, default=dict)
+    personality_state = Column(JSON, default=dict)  # Stato PersonalityEngine (JSON blob)
     
     # Relazioni
     messages = relationship("MessageModel", back_populates="session", cascade="all, delete-orphan")
@@ -114,6 +115,23 @@ class DatabaseManager:
         """Crea tutte le tabelle."""
         async with self.engine.begin() as conn:
             await conn.run_sync(Base.metadata.create_all)
+    
+    async def migrate_add_personality_state(self) -> None:
+        """Aggiunge colonna personality_state se non esiste (migration v3.2)."""
+        from sqlalchemy import text
+        async with self.engine.begin() as conn:
+            # Check SQLite
+            if "sqlite" in self.database_url:
+                result = await conn.execute(text(
+                    "SELECT name FROM pragma_table_info('game_sessions') WHERE name='personality_state'"
+                ))
+                if not result.scalar():
+                    print("[DB Migration] Adding personality_state column...")
+                    await conn.execute(text(
+                        "ALTER TABLE game_sessions ADD COLUMN personality_state JSON DEFAULT '{}'"
+                    ))
+                    print("[DB Migration] personality_state column added")
+            # Per PostgreSQL/MySQL si può aggiungere supporto simile
     
     async def drop_tables(self) -> None:
         """Drop tutte le tabelle (ATTENZIONE!)."""
@@ -286,6 +304,38 @@ class DatabaseManager:
             db.add(state)
             await db.commit()
             return state
+    
+    # === Personality State Helpers ===
+    
+    async def get_personality_state(self, db: AsyncSession, session_id: int) -> Optional[dict]:
+        """Recupera lo stato personality salvato (JSON blob)."""
+        result = await db.execute(
+            select(SessionModel.personality_state).where(SessionModel.id == session_id)
+        )
+        state = result.scalar_one_or_none()
+        return state if state else None
+    
+    async def save_personality_state(
+        self, 
+        db: AsyncSession, 
+        session_id: int, 
+        state_data: dict
+    ):
+        """Salva lo stato personality come JSON blob."""
+        result = await db.execute(
+            select(SessionModel).where(SessionModel.id == session_id)
+        )
+        session = result.scalar_one()
+        session.personality_state = state_data
+        await db.commit()
+    
+    async def delete_messages(self, db: AsyncSession, message_ids: list[int]):
+        """Cancella messaggi specifici (usato per memory compression)."""
+        from sqlalchemy import delete
+        await db.execute(
+            delete(MessageModel).where(MessageModel.id.in_(message_ids))
+        )
+        await db.commit()
 
 
 # Singleton

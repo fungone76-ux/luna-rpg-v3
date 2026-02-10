@@ -1,17 +1,140 @@
 """Startup dialog for game creation/loading."""
+import asyncio
 from pathlib import Path
-from typing import Optional
+from typing import Optional, List
+from datetime import datetime
 
 from PySide6.QtWidgets import (
     QDialog, QVBoxLayout, QHBoxLayout, QLabel, 
     QListWidget, QPushButton, QComboBox, QTabWidget,
     QWidget, QCheckBox, QLineEdit, QGroupBox, QFormLayout,
-    QFileDialog
+    QMessageBox, QListWidgetItem
 )
 from PySide6.QtCore import Qt
 
 from core.world_loader import WorldLoader
+from core.database import db_manager, SessionModel
 from config.settings import get_settings, load_user_prefs, save_user_prefs
+
+
+class LoadGameDialog(QDialog):
+    """Dialog per caricare una partita esistente dal database."""
+    
+    def __init__(self, parent=None):
+        super().__init__(parent)
+        self.setWindowTitle("Load Game - Select Save")
+        self.resize(500, 400)
+        
+        self.selected_session_id: Optional[int] = None
+        
+        self._setup_ui()
+        self._load_saves()
+    
+    def _setup_ui(self):
+        layout = QVBoxLayout(self)
+        
+        # Info
+        info = QLabel("Seleziona una partita salvata:")
+        info.setStyleSheet("font-weight: bold; font-size: 14px;")
+        layout.addWidget(info)
+        
+        # Lista salvataggi
+        self.list_saves = QListWidget()
+        self.list_saves.setStyleSheet("""
+            QListWidget {
+                background-color: #2d2d2d;
+                border: 1px solid #444;
+                border-radius: 4px;
+                color: #fff;
+            }
+            QListWidget::item {
+                padding: 10px;
+                border-bottom: 1px solid #444;
+            }
+            QListWidget::item:selected {
+                background-color: #4CAF50;
+            }
+        """)
+        self.list_saves.itemDoubleClicked.connect(self.accept)
+        layout.addWidget(self.list_saves)
+        
+        # Bottoni
+        btn_layout = QHBoxLayout()
+        btn_layout.addStretch()
+        
+        btn_cancel = QPushButton("❌ Cancel")
+        btn_cancel.clicked.connect(self.reject)
+        btn_layout.addWidget(btn_cancel)
+        
+        btn_load = QPushButton("▶ Load Selected")
+        btn_load.setStyleSheet("""
+            QPushButton {
+                background-color: #4CAF50;
+                color: white;
+                font-weight: bold;
+                padding: 8px 16px;
+            }
+        """)
+        btn_load.clicked.connect(self.accept)
+        btn_layout.addWidget(btn_load)
+        
+        layout.addLayout(btn_layout)
+    
+    def _load_saves(self):
+        """Carica lista salvataggi dal database."""
+        try:
+            # Esegui query async in modo sincrono per semplicità
+            import asyncio
+            
+            async def fetch_saves():
+                async with db_manager.get_session() as db:
+                    result = await db.execute(
+                        db_manager.async_session.select(SessionModel)
+                        .order_by(SessionModel.updated_at.desc())
+                    )
+                    return result.scalars().all()
+            
+            # Usa run_sync o crea un nuovo loop
+            try:
+                loop = asyncio.get_event_loop()
+                saves = loop.run_until_complete(self._fetch_saves_async())
+            except RuntimeError:
+                # No running loop
+                saves = asyncio.run(self._fetch_saves_async())
+            
+            self.list_saves.clear()
+            for save in saves:
+                item_text = f"{save.companion_name} - {save.world_id} - Turn {save.turn_count}"
+                item = QListWidgetItem(item_text)
+                item.setData(Qt.UserRole, save.id)
+                item.setToolTip(f"Created: {save.created_at}\nUpdated: {save.updated_at}")
+                self.list_saves.addItem(item)
+            
+            if not saves:
+                self.list_saves.addItem("Nessuna partita salvata")
+                
+        except Exception as e:
+            self.list_saves.addItem(f"Error loading saves: {e}")
+    
+    async def _fetch_saves_async(self) -> List[SessionModel]:
+        """Fetch saves from database."""
+        async with db_manager.get_session() as db:
+            from sqlalchemy import select, desc
+            result = await db.execute(
+                select(SessionModel).order_by(desc(SessionModel.updated_at))
+            )
+            return list(result.scalars().all())
+    
+    def accept(self):
+        """Conferma selezione."""
+        item = self.list_saves.currentItem()
+        if item:
+            self.selected_session_id = item.data(Qt.UserRole)
+        super().accept()
+    
+    def get_selected_session_id(self) -> Optional[int]:
+        """Restituisce ID sessione selezionata."""
+        return self.selected_session_id
 
 
 class StartupDialog(QDialog):
@@ -28,8 +151,8 @@ class StartupDialog(QDialog):
         
         self.selected_world_id: Optional[str] = None
         self.selected_companion: Optional[str] = None
+        self.selected_session_id: Optional[int] = None
         self.mode: str = "new"  # 'new' o 'load'
-        self.load_path: Optional[Path] = None
         
         self._setup_ui()
         self._load_worlds()
@@ -61,14 +184,43 @@ class StartupDialog(QDialog):
         self.list_companions = QListWidget()
         game_layout.addWidget(self.list_companions)
         
-        # Load button
-        btn_load = QPushButton("[L] Load Existing Save")
-        btn_load.clicked.connect(self._on_load_click)
-        game_layout.addWidget(btn_load)
-        
         tabs.addTab(tab_game, "[GM] New Game")
         
-        # Tab 2: Settings
+        # Tab 2: Load Game (nuovo)
+        tab_load = QWidget()
+        load_layout = QVBoxLayout(tab_load)
+        
+        lbl_load = QLabel("📂 Carica partita esistente:")
+        lbl_load.setStyleSheet("font-weight: bold; font-size: 14px;")
+        load_layout.addWidget(lbl_load)
+        
+        # Lista salvataggi
+        self.list_saves = QListWidget()
+        self.list_saves.setStyleSheet("""
+            QListWidget {
+                background-color: #2d2d2d;
+                border: 1px solid #444;
+                border-radius: 4px;
+                color: #fff;
+            }
+            QListWidget::item {
+                padding: 10px;
+                border-bottom: 1px solid #444;
+            }
+            QListWidget::item:selected {
+                background-color: #4CAF50;
+            }
+        """)
+        self.list_saves.itemDoubleClicked.connect(self._on_load_selected)
+        load_layout.addWidget(self.list_saves)
+        
+        btn_refresh = QPushButton("🔄 Refresh List")
+        btn_refresh.clicked.connect(self._load_saves_list)
+        load_layout.addWidget(btn_refresh)
+        
+        tabs.addTab(tab_load, "[L] Load Game")
+        
+        # Tab 3: Settings
         tab_settings = QWidget()
         settings_layout = QVBoxLayout(tab_settings)
         
@@ -132,6 +284,61 @@ class StartupDialog(QDialog):
                 break
         
         self._on_world_changed()
+        self._load_saves_list()
+    
+    def _load_saves_list(self):
+        """Carica lista salvataggi nel tab Load."""
+        self.list_saves.clear()
+        
+        # Placeholder - verrà popolato quando il DB è disponibile
+        self.list_saves.addItem("Click Refresh to load saves...")
+    
+    async def _fetch_saves_async(self) -> List[SessionModel]:
+        """Fetch saves from database."""
+        from sqlalchemy import select, desc
+        async with db_manager.get_session() as db:
+            result = await db.execute(
+                select(SessionModel).order_by(desc(SessionModel.updated_at))
+            )
+            return list(result.scalars().all())
+    
+    def load_saves_sync(self):
+        """Carica salvataggi (da chiamare quando il DB è inizializzato)."""
+        try:
+            import asyncio
+            
+            async def fetch():
+                return await self._fetch_saves_async()
+            
+            try:
+                loop = asyncio.get_event_loop()
+                if loop.is_running():
+                    # Se siamo in un contesto async, crea un task
+                    return None  # Non possiamo bloccare
+                saves = loop.run_until_complete(fetch())
+            except RuntimeError:
+                saves = asyncio.run(fetch())
+            
+            self.list_saves.clear()
+            for save in saves:
+                updated_str = ""
+                if hasattr(save, 'updated_at') and save.updated_at:
+                    try:
+                        updated_str = save.updated_at.strftime("%Y-%m-%d %H:%M")
+                    except:
+                        updated_str = str(save.updated_at)[:16]
+                
+                item_text = f"[{save.id}] {save.companion_name} - {save.world_id} (Turn {save.turn_count}) - {updated_str}"
+                item = QListWidgetItem(item_text)
+                item.setData(Qt.UserRole, save.id)
+                self.list_saves.addItem(item)
+            
+            if not saves:
+                self.list_saves.addItem("No saved games found")
+                
+        except Exception as e:
+            self.list_saves.clear()
+            self.list_saves.addItem(f"Error: {e}")
     
     def _on_world_changed(self):
         """Aggiorna lista companion quando cambia mondo."""
@@ -150,20 +357,30 @@ class StartupDialog(QDialog):
         """Abilita/disabilita input RunPod."""
         self.txt_runpod_url.setEnabled(self.chk_runpod.isChecked())
     
-    def _on_load_click(self):
-        """Dialog caricamento save."""
-        path, _ = QFileDialog.getOpenFileName(
-            self, "Load Game", 
-            str(Path("storage/saves").absolute()),
-            "JSON (*.json)"
-        )
-        if path:
+    def _on_load_selected(self):
+        """Carica partita selezionata dalla lista."""
+        item = self.list_saves.currentItem()
+        if item and item.data(Qt.UserRole):
+            self.selected_session_id = item.data(Qt.UserRole)
             self.mode = "load"
-            self.load_path = Path(path)
             self.accept()
     
     def _on_start(self):
         """Conferma e chiudi."""
+        # Se siamo sul tab Load e c'è una selezione
+        current_tab = self.findChild(QTabWidget).currentIndex()
+        if current_tab == 1:  # Tab Load
+            item = self.list_saves.currentItem()
+            if item and item.data(Qt.UserRole):
+                self.selected_session_id = item.data(Qt.UserRole)
+                self.mode = "load"
+                self.accept()
+                return
+            else:
+                QMessageBox.warning(self, "No Selection", "Please select a saved game to load.")
+                return
+        
+        # Altrimenti New Game
         self.mode = "new"
         self.selected_world_id = self.combo_worlds.currentData()
         
@@ -184,7 +401,7 @@ class StartupDialog(QDialog):
             "mode": self.mode,
             "world_id": self.selected_world_id,
             "companion": self.selected_companion,
-            "load_path": self.load_path,
+            "session_id": self.selected_session_id,
             "use_runpod": self.chk_runpod.isChecked(),
             "runpod_id": self.txt_runpod_url.text().strip()
         }

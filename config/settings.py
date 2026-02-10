@@ -112,8 +112,15 @@ class Settings(BaseSettings):
 
     @property
     def video_available(self) -> bool:
-        """True se il video generation è disponibile."""
-        return self.comfy_url is not None
+        """True se il video generation è disponibile.
+        
+        Video è disponibile solo in modalità RUNPOD con ComfyUI.
+        In modalità LOCAL la generazione video è disabilitata.
+        """
+        # Video richiede RunPod (ComfyUI con nodi video)
+        if not self.is_runpod:
+            return False
+        return self.comfy_url is not None and self.runpod_id is not None
 
     def validate_setup(self) -> list[str]:
         """Valida la configurazione."""

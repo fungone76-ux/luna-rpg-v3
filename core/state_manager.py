@@ -1,4 +1,7 @@
 """Game state management with database persistence."""
+import json
+from datetime import datetime
+from pathlib import Path
 from typing import Dict, Any, Optional
 
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -175,11 +178,84 @@ class StateManager:
         try:
             await db.commit()
             print(f"[SAVE] Game saved (session {self.session_id}) - {name}")
+            # Esporta anche in JSON per visibilità
+            await self.export_to_file()
             return self.session_id
         except Exception as e:
             print(f"[ERR] Save error: {e}")
             await db.rollback()
             return 0
+    
+    async def export_to_file(self, filepath: Optional[str] = None) -> str:
+        """Esporta stato corrente in file JSON leggibile.
+        
+        Args:
+            filepath: Percorso file (default: storage/saves/session_{id}_{timestamp}.json)
+            
+        Returns:
+            Percorso del file creato
+        """
+        if not self._session:
+            return ""
+        
+        # Crea cartella saves se non esiste
+        saves_dir = Path("storage/saves")
+        saves_dir.mkdir(parents=True, exist_ok=True)
+        
+        # Nome file default
+        if not filepath:
+            timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+            filepath = saves_dir / f"session_{self.session_id}_{timestamp}.json"
+        else:
+            filepath = Path(filepath)
+        
+        # Prepara dati esportabili
+        export_data = {
+            "exported_at": datetime.now().isoformat(),
+            "session_id": self.session_id,
+            "turn": self._session.turn_count,
+            "companion": self._session.companion_name,
+            "affinity": self._session.affinity,
+            "location": self._session.location,
+            "outfit": self._session.current_outfit,
+            "time": self._session.time_of_day,
+            "flags": self._session.flags,
+            "history": self._session.history[-10:] if self._session.history else [],  # Ultime 10
+        }
+        
+        # Salva JSON formattato
+        with open(filepath, 'w', encoding='utf-8') as f:
+            json.dump(export_data, f, indent=2, ensure_ascii=False, default=str)
+        
+        print(f"[EXPORT] Stato esportato in: {filepath}")
+        return str(filepath)
+    
+    async def save_session_state(self, db: AsyncSession, **kwargs) -> bool:
+        """Salva campi specifici dello stato sessione (es. npc_states, time_of_day).
+        
+        Args:
+            db: AsyncSession database
+            **kwargs: Campi da salvare (npc_states, time_of_day, location, etc.)
+        
+        Returns:
+            True se salvato con successo
+        """
+        if not self._db_session:
+            return False
+        
+        try:
+            for key, value in kwargs.items():
+                if hasattr(self._db_session, key):
+                    setattr(self._db_session, key, value)
+                if self._session and hasattr(self._session, key):
+                    setattr(self._session, key, value)
+            
+            await db.commit()
+            return True
+        except Exception as e:
+            print(f"[ERR] save_session_state error: {e}")
+            await db.rollback()
+            return False
     
     async def list_saves(self, db: AsyncSession) -> list:
         """Lista tutte le sessioni salvate."""

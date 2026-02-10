@@ -1,5 +1,6 @@
 """Builder per scene single-character."""
 import random
+import re
 from typing import Dict, List, Optional
 
 from core.models import SceneAnalysis, GameSession
@@ -32,6 +33,17 @@ class SingleCharacterBuilder:
         """
         char_name = scene.primary_subject or game_session.companion_name
         
+        # DEBUG: Log dei valori per verificare chi viene generato
+        print(f"    [DEBUG] Scene primary_subject: {scene.primary_subject}")
+        print(f"    [DEBUG] GameSession companion: {game_session.companion_name}")
+        print(f"    [DEBUG] Final char_name: {char_name}")
+        
+        # Lista delle companion conosciute (hanno LoRA specifici)
+        known_companions = set(world_data.get("companions", {}).keys())
+        is_known_companion = char_name in known_companions
+        print(f"    [DEBUG] Known companions: {known_companions}")
+        print(f"    [DEBUG] Is known companion: {is_known_companion}")
+        
         # Recupera outfit corrente
         if char_name == game_session.companion_name:
             outfit_key = game_session.current_outfit
@@ -40,10 +52,26 @@ class SingleCharacterBuilder:
             outfit_key = npc_state.get("current_outfit", "default")
         
         # Costruisci base prompt
-        base_raw = BASE_PROMPTS.get(char_name, NPC_BASE)
+        if is_known_companion:
+            # Companion conosciuta: usa il suo base prompt (con LoRA)
+            base_raw = BASE_PROMPTS.get(char_name, NPC_BASE)
+        else:
+            # NPC generico o sconosciuto: usa base prompt generico SENZA LoRA
+            base_raw = NPC_BASE
+        
         base_clean = clean_base_prompt(base_raw, is_multi=False)
         
-        # Costruisci outfit
+        # Se è un NPC generico, rimuovi i LoRA dei companion
+        if not is_known_companion:
+            # Rimuovi tutti i LoRA (pattern: <lora:...>)
+            base_clean = re.sub(r'<lora:[^>]+>', '', base_clean)
+            # Rimuovi tag personaggio-specifici
+            base_clean = re.sub(r'\b(stsdebbie|stssmith|alice_milf_catchers)\b', '', base_clean, flags=re.IGNORECASE)
+            # Pulisci spazi multipli
+            base_clean = re.sub(r'\s+', ' ', base_clean).strip(', ')
+            print(f"    [NPC Generic] Using base without character LoRAs for '{char_name}'")
+        
+        # Costruisci outfit (solo per companion conosciute)
         world_wardrobe = {
             name: data.wardrobe
             for name, data in world_data.get("companions", {}).items()
@@ -52,53 +80,48 @@ class SingleCharacterBuilder:
             char_name, outfit_key, world_wardrobe, visual_en
         )
         
-        # Assembla prompt - SIMPLIFIED
+        # Se è un NPC generico, non forzare l'outfit della companion
+        if not is_known_companion:
+            outfit_str = ""  # Lascia che l'LLM decida l'outfit dalla descrizione visiva
+        
+        # Assembla prompt
         parts = []
         
-        # 1. Character base (already has quality tags + LoRAs)
-        # Remove "dynamic pose" if we have specific static poses
+        # 1. Character base
         static_poses = ["standing", "seated", "sitting", "leaning", "arms_crossed"]
         has_static_pose = any(p in " ".join(tags_en).lower() for p in static_poses)
         if has_static_pose and "dynamic pose" in base_clean.lower():
             base_clean = base_clean.replace("dynamic pose", "").replace(", ,", ",").strip(", ")
         parts.append(base_clean)
         
-        # NOTA: I realism boosters sono stati rimossi perche' interferivano con la qualita'
-        # Il base prompt contiene gia' tutti i quality tag necessari (score_9, score_8_up, etc.)
+        # 2. Outfit (solo per companion conosciute)
+        if outfit_str:
+            parts.append(outfit_str.replace(":1.3", "").replace(":1.2", ""))
         
-        # 2. Outfit (NO WEIGHT)
-        parts.append(outfit_str.replace(":1.3", "").replace(":1.2", ""))
-        
-        # 3. Tags - KEEP ALMOST EVERYTHING, minimal cleaning
-        # Only remove exact duplicates from base prompt
-        base_lower = base_clean.lower()
+        # 3. Tags - Rimuovi tag personaggio-specifici per NPC generici
         clean_tags = []
         for t in tags_en:
             t_lower = t.lower()
-            # Skip only if already in base AND it's a character-specific tag
-            if t_lower in ["stsdebbie", "alice_milf_catchers", "stssmith"]:
+            # Per NPC generici, rimuovi tutti i tag dei companion
+            if not is_known_companion and t_lower in ["stsdebbie", "alice_milf_catchers", "stssmith", 
+                                                       "brown hair", "blonde", "1girl"]:
                 continue
             clean_tags.append(t)
         
-        # Add ALL tags from LLM
         if clean_tags:
             parts.append(", ".join(clean_tags))
         else:
-            # Fallback se tags_en è vuoto
             parts.append("detailed background, natural lighting")
         
-        # 4. Visual description - KEEP IT COMPLETELY INTACT
-        # This is where the scene variety comes from!
+        # 4. Visual description (ESSENZIALE per NPC generici!)
         if visual_en and len(visual_en) > 5:
-            # Remove only trailing punctuation issues
             visual_clean = visual_en.strip().rstrip(",.;")
             if visual_clean:
                 parts.append(visual_clean)
                 print(f"    [Visual] {visual_clean[:60]}...")
         
-        # Composition boost based on scene type OR body focus
+        # 5. Composition boost
         if body_focus:
-            # Override composition based on body focus
             if body_focus in ["legs", "feet", "lower_body"]:
                 parts.append("cowboy_shot, lower_body, legs_focus, depth of field")
             elif body_focus in ["chest", "breasts", "torso"]:
@@ -110,7 +133,6 @@ class SingleCharacterBuilder:
             elif body_focus in ["back", "behind"]:
                 parts.append("from_behind, back_focus, back")
         else:
-            # Use scene composition type
             if scene.composition_type.value == "close_up":
                 parts.append("close up portrait, detailed face, depth of field")
             elif scene.composition_type.value == "wide_shot":

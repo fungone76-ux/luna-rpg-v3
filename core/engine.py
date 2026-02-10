@@ -1,25 +1,28 @@
-"""Main Game Engine - Async orchestrator with Quest System v3."""
+"""Main Game Engine - Async orchestrator with Quest System v3 and Personality Engine."""
 from pathlib import Path
 from typing import Optional, List, Dict, Any
 
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from core.database import db_manager, DatabaseManager
+from core.database import db_manager
 from core.models import (
     GameSession, WorldConfig, LLMResponse, SceneAnalysis, 
-    GameStateUpdate, CompanionConfig
+    GameStateUpdate
 )
 from core.state_manager import StateManager
 from core.memory_manager import MemoryManager
 from core.quest_engine import QuestEngine, QuestAction, QuestUpdateResult
+from core.personality_engine import PersonalityEngine
+from core.time_manager import TimeManager
 
 from core.prompt_builders import (
     SingleCharacterBuilder, MultiCharacterBuilder, 
-    NPCBuilder, PromptResult
+    NPCBuilder
 )
 from core.world_loader import WorldLoader
 from media.llm_client import LLMClient
 from media.comfy_image_client import ComfyImageClient
+from media.image_client import ImageClient  # SD WebUI
 from media.audio_client import AudioClient
 from media.video_client import VideoClient
 
@@ -41,11 +44,14 @@ class GameEngine:
         from config.settings import Settings
         self.settings = Settings()
         
-        # Clients
+        # Clients (inizializzati in base alla modalità)
         self.llm = LLMClient()
-        self.image_gen = ComfyImageClient()
+        self.image_gen = None  # Sarà impostato in setup_clients
+        self.image_gen_comfy = ComfyImageClient()  # Per RunPod
+        self.image_gen_sd = ImageClient()  # Per locale (SD WebUI)
         self.audio = AudioClient()
         self.video_gen = VideoClient()
+        self._is_runpod_mode = False
         
         # Core
         self.world_loader = WorldLoader()
@@ -60,6 +66,8 @@ class GameEngine:
         self.memory: Optional[MemoryManager] = None
         self.world_data: Optional[Dict[str, Any]] = None
         self.quest_engine: Optional[QuestEngine] = None
+        self.personality_engine: Optional[PersonalityEngine] = None
+        self.time_manager: Optional[TimeManager] = None
     
     async def _manage_vram(self, action: str) -> bool:
         """Gestisce la staffetta VRAM tra SD e ComfyUI."""
@@ -72,6 +80,44 @@ class GameEngine:
     async def initialize_database(self):
         """Inizializza database all'avvio."""
         await db_manager.create_tables()
+        await db_manager.migrate_add_personality_state()  # Migration v3.2
+    
+    def setup_clients(self, use_runpod: bool = False, runpod_id: str = None):
+        """Configura i client in base alla modalità scelta.
+        
+        Args:
+            use_runpod: True per RunPod, False per locale
+            runpod_id: ID del pod RunPod (se use_runpod=True)
+        """
+        self._is_runpod_mode = use_runpod
+        
+        if use_runpod and runpod_id:
+            # Modalità RunPod: usa ComfyUI per immagini e video
+            print(f"[Engine] Modalità RUNPOD (Pod: {runpod_id})")
+            self.image_gen = self.image_gen_comfy
+            # Aggiorna settings per RunPod
+            import os
+            os.environ["EXECUTION_MODE"] = "RUNPOD"
+            os.environ["RUNPOD_ID"] = runpod_id
+            # Ricarica settings
+            from config.settings import get_settings
+            get_settings.cache_clear()
+            new_settings = get_settings()
+            # Aggiorna client con nuovi settings
+            self.image_gen_comfy = ComfyImageClient(new_settings)
+            self.image_gen = self.image_gen_comfy
+            self.video_gen = VideoClient(new_settings)
+        else:
+            # Modalità Locale: usa SD WebUI (porta 7860)
+            print("[Engine] Modalità LOCALE (SD WebUI @ http://127.0.0.1:7860)")
+            self.image_gen = self.image_gen_sd
+            # Assicurati che video_gen usi i settings locali
+            from config.settings import get_settings
+            local_settings = get_settings()
+            self.video_gen = VideoClient(local_settings)
+        
+        print(f"[Engine] Image client: {'ComfyUI (RunPod)' if use_runpod else 'SD WebUI (Local)'}")
+        print(f"[Engine] Video disponibile: {self.video_gen.settings.video_available}")
     
     async def create_game(
         self,
@@ -99,6 +145,12 @@ class GameEngine:
         
         # Quest Engine
         self.quest_engine = QuestEngine(self.world_data)
+        
+        # Personality Engine (nuovo)
+        self.personality_engine = PersonalityEngine(self.world_data, self.state.current)
+        
+        # Time Manager - Living World
+        self.time_manager = TimeManager()
         
         return session
     
@@ -130,6 +182,19 @@ class GameEngine:
         quest_states = [QuestState(**s.__dict__) for s in saved_quest_states]
         self.quest_engine.load_saved_states(quest_states)
         
+        # Personality Engine - carica stato salvato se presente
+        saved_personality = await db_manager.get_personality_state(db, session_id)
+        if saved_personality:
+            self.personality_engine = PersonalityEngine.deserialize(
+                saved_personality, self.world_data, self.state.current
+            )
+            print(f"[Personality] Loaded saved state for session {session_id}")
+        else:
+            self.personality_engine = PersonalityEngine(self.world_data, self.state.current)
+        
+        # Time Manager - inizializza (puoi aggiungere persistenza se necessario)
+        self.time_manager = TimeManager()
+        
         return session
     
     async def process_turn(
@@ -146,6 +211,19 @@ class GameEngine:
         current_char = self.state.current.companion_name
         current_outfit = self.state.current.current_outfit
         print(f"[O] DEBUG: Active companion={current_char}, outfit={current_outfit}")
+        
+        # ========== STEP 0: PERSONALITY ANALYSIS ==========
+        if self.personality_engine:
+            behavior_changes = self.personality_engine.analyze_player_action(
+                current_char, user_input, self.state.current.turn_count
+            )
+            if behavior_changes:
+                print(f"[Personality] Detected: {behavior_changes}")
+            
+            # Update NPC awareness (jealousy, etc.)
+            self.personality_engine.update_npc_awareness(
+                current_char, self.state.current.turn_count
+            )
         
         # ========== STEP 1: QUEST SYSTEM UPDATE ==========
         quest_updates = QuestUpdateResult()
@@ -210,7 +288,8 @@ class GameEngine:
             user_input=user_input,
             system_instruction=system_prompt,
             history=history,
-            memory_context=memory_block
+            memory_context=memory_block,
+            companion_name=self.state.current.companion_name
         )
         
         # ========== STEP 5: SALVA MESSAGGI ==========
@@ -222,12 +301,23 @@ class GameEngine:
             response.visual_en, response.tags_en
         )
         
-        # ========== STEP 6: AGGIORNA STATO ==========
-        if response.updates:
-            await self.state.update(db, response.updates)
-            if response.updates.new_fact:
+        # ========== STEP 6: VALIDATE AND APPLY STATE CHANGES ==========
+        # LLM suggests changes; Python validates and applies correct values
+        print(f"[DEBUG] LLM proposed affinity_change: {response.updates.affinity_change}")
+        validated_updates = self._validate_llm_updates(response, current_char)
+        print(f"[DEBUG] Validated affinity_change: {validated_updates.affinity_change}")
+        
+        if validated_updates:
+            old_affinity = self.state.current.affinity.copy()
+            await self.state.update(db, validated_updates)
+            new_affinity = self.state.current.affinity
+            # Log cambiamenti affinità
+            for char in old_affinity:
+                if old_affinity[char] != new_affinity[char]:
+                    print(f"[AFFINITY] {char}: {old_affinity[char]} -> {new_affinity[char]} (+{new_affinity[char] - old_affinity[char]})")
+            if validated_updates.new_fact:
                 await self.memory.add_fact(
-                    db, response.updates.new_fact, self.state.current.turn_count
+                    db, validated_updates.new_fact, self.state.current.turn_count
                 )
         
         # ========== STEP 7: SCENE ANALYSIS ==========
@@ -249,9 +339,8 @@ class GameEngine:
             }
         }
         
-        # Aggiungi notifiche quest al testo
-        if quest_updates.narrative_context:
-            result["text"] = quest_updates.narrative_context + "\n\n" + result["text"]
+        # Nota: le notifiche quest sono ora iniettate nel system prompt
+        # per integrazione narrativa naturale (non più prepend al testo)
         
         # ========== STEP 9: GENERA IMMAGINE ==========
         body_focus = response.body_focus
@@ -269,6 +358,43 @@ class GameEngine:
         if generate_audio:
             played = await self.audio.speak(response.text, self.state.current.companion_name)
             result["audio_played"] = played
+        
+        # ========== STEP 11: SAVE PERSONALITY STATE ==========
+        if self.personality_engine:
+            await db_manager.save_personality_state(
+                db, self.state.session_id, self.personality_engine.serialize()
+            )
+        
+        # ========== STEP 12: LIVING WORLD - TIME & NPC SCHEDULES ==========
+        if self.time_manager:
+            self.time_manager.advance_turn()
+            
+            # Aggiorna stato NPC basato su schedule
+            for npc_name, npc_data in self.world_data.get("companions", {}).items():
+                if npc_name != self.state.current.companion_name:
+                    schedule = self.time_manager.get_npc_schedule(npc_data)
+                    if schedule:
+                        if npc_name not in self.state.current.npc_states:
+                            self.state.current.npc_states[npc_name] = {}
+                        
+                        # Aggiorna location e outfit se definiti nello schedule
+                        if "location" in schedule:
+                            self.state.current.npc_states[npc_name]["location"] = schedule["location"]
+                        if "outfit" in schedule:
+                            self.state.current.npc_states[npc_name]["current_outfit"] = schedule["outfit"]
+            
+            # Salva NPC states aggiornati nel DB
+            await self.state.save_session_state(
+                db,
+                npc_states=self.state.current.npc_states,
+                time_of_day=self.time_manager.get_time_of_day()
+            )
+            
+            # Aggiorna time_of_day se cambiato
+            new_time = self.time_manager.get_time_of_day()
+            if new_time != self.state.current.time_of_day:
+                self.state.current.time_of_day = new_time
+                print(f"[Time] Now {self.time_manager.get_formatted_time()} - {new_time}")
         
         return result
     
@@ -290,7 +416,12 @@ class GameEngine:
         }
     
     async def _execute_quest_actions(self, db: AsyncSession, actions: List[QuestAction]):
-        """Esegue azioni definite dalle quest."""
+        """Esegue azioni definite dalle quest.
+        
+        NOTE: Modifica solo self.state.current (in-memory). 
+        Il chiamante deve salvare esplicitamente su DB via state.save() o simile.
+        Il parametro 'db' è ricevuto per compatibilità ma non usato direttamente qui.
+        """
         for action in actions:
             action_type = action.action
             print(f"[QuestAction] Executing: {action_type}")
@@ -298,14 +429,13 @@ class GameEngine:
             try:
                 if action_type == "set_location":
                     self.state.current.location = action.target
-                    self.state._db_session.location = action.target
+                    # DB update via db parameter
                 
                 elif action_type == "set_outfit":
                     char = action.character
                     outfit = action.outfit
                     if char == self.state.current.companion_name:
                         self.state.current.current_outfit = outfit
-                        self.state._db_session.current_outfit = outfit
                     else:
                         if char not in self.state.current.npc_states:
                             self.state.current.npc_states[char] = {}
@@ -313,7 +443,6 @@ class GameEngine:
                 
                 elif action_type == "add_flag" or action_type == "set_flag":
                     self.state.current.flags[action.key] = action.value
-                    self.state._db_session.flags = self.state.current.flags
                 
                 elif action_type == "change_affinity":
                     char = action.character
@@ -321,7 +450,6 @@ class GameEngine:
                     if char in self.state.current.affinity:
                         self.state.current.affinity[char] = max(0, min(100, 
                             self.state.current.affinity[char] + delta))
-                        self.state._db_session.affinity = self.state.current.affinity
                 
                 elif action_type == "increment_stat":
                     char = action.character
@@ -340,7 +468,6 @@ class GameEngine:
                 
                 elif action_type == "set_time":
                     self.state.current.time_of_day = action.target
-                    self.state._db_session.time_of_day = action.target
                 
                 elif action_type == "unlock_achievement":
                     print(f"[Achievement] Unlocked: {action.achievement}")
@@ -402,43 +529,102 @@ class GameEngine:
             "is_multi_character": len(mentioned_chars) >= 2
         }
     
-    def _build_system_prompt_with_analysis(self, analysis: Dict[str, Any], quest_updates=None) -> str:
-        """Costruisce system prompt con contesto quest."""
+    def _build_system_prompt_with_analysis(self, analysis: Dict[str, Any], quest_updates: QuestUpdateResult = None) -> str:
+        """Build system prompt with personality, quest context, and scene analysis.
+        All context provided to LLM is in English for optimal model performance.
+        """
         base_prompt = self._build_system_prompt()
         
-        directives = []
+        context_sections = []
         
+        # 1. Scene Composition Directives
         if analysis.get("primary_subject"):
-            directives.append(f"FOCUS CHARACTER: {analysis['primary_subject']}")
+            context_sections.append(f"FOCUS CHARACTER: {analysis['primary_subject']}")
         
         if analysis.get("composition_type"):
             comp_map = {
                 "close_up": "Use CLOSE UP framing",
-                "medium_shot": "Use MEDIUM SHOT framing",
+                "medium_shot": "Use MEDIUM SHOT framing", 
                 "wide_shot": "Use WIDE/COWBOY SHOT framing"
             }
-            directives.append(comp_map.get(analysis["composition_type"], ""))
+            context_sections.append(comp_map.get(analysis["composition_type"], ""))
         
         if analysis.get("body_focus"):
-            directives.append(f"BODY FOCUS: {analysis['body_focus']}")
+            context_sections.append(f"BODY FOCUS: {analysis['body_focus']}")
         
-        # Aggiungi contesto quest
+        # 2. Personality Engine Context (NEW - in English)
+        emotional_override = None  # Inizializza sempre
+        if self.personality_engine:
+            current_char = self.state.current.companion_name
+            current_affinity = self.state.current.affinity.get(current_char, 0)
+            
+            personality_context = self.personality_engine.generate_system_prompt_context(
+                current_char, current_affinity
+            )
+            context_sections.append(personality_context)
+            
+            # Emotional state override check
+            emotional_override = self.personality_engine.get_emotional_state_override(current_char)
+            if emotional_override:
+                context_sections.append(f"\n[EMOTIONAL STATE OVERRIDE: {emotional_override}]")
+        
+        # 3. Quest Context & Dynamic Events (Seamless Narrative)
         if self.quest_engine:
             quest_context = self.quest_engine.get_active_quests_context()
             if quest_context:
-                directives.append(f"\n=== ACTIVE QUESTS ===\n{quest_context}")
+                context_sections.append(f"\n=== ACTIVE QUESTS ===\n{quest_context}")
             
-            # Aggiungi emotional state della companion attuale
-            current_char = self.state.current.companion_name
-            emo_state = self.quest_engine.get_companion_emotional_state(
-                current_char, self._get_game_state_snapshot()
-            )
-            if emo_state and emo_state != "default":
-                directives.append(f"\n{current_char} is currently feeling: {emo_state}")
+            # NUOVO: Quest events da narrare (seamless integration)
+            if quest_updates and (quest_updates.new_quests or quest_updates.stage_changes):
+                event_narratives = []
+                
+                for quest_id in quest_updates.new_quests:
+                    quest_def = self.quest_engine.quest_definitions.get(quest_id)
+                    if quest_def and not quest_def.meta.hidden:
+                        stage = quest_def.stages.get(self.quest_engine.active_states[quest_id].current_stage_id)
+                        if stage and stage.narrative_prompt:
+                            event_narratives.append(f"{quest_def.meta.character or 'Someone'}: {stage.narrative_prompt}")
+                
+                for change in quest_updates.stage_changes:
+                    quest_def = self.quest_engine.quest_definitions.get(change['quest_id'])
+                    if quest_def:
+                        stage = quest_def.stages.get(change['to'])
+                        if stage and stage.narrative_prompt:
+                            event_narratives.append(f"Development: {stage.narrative_prompt}")
+                
+                if event_narratives:
+                    context_sections.append("\n=== IMMINENT EVENTS ===")
+                    context_sections.append("Narrate these events naturally in your response. Do NOT use meta-terms like 'quest' or 'stage':")
+                    for i, event in enumerate(event_narratives, 1):
+                        context_sections.append(f"{i}. {event}")
+            
+            # Emotional state from quest system (fallback)
+            if emotional_override is None:
+                current_char = self.state.current.companion_name
+                emo_state = self.quest_engine.get_companion_emotional_state(
+                    current_char, self._get_game_state_snapshot()
+                )
+                if emo_state and emo_state != "default":
+                    context_sections.append(f"\n{current_char} emotional state: {emo_state}")
         
-        if directives:
-            directive_text = "\n\n=== DIRECTIVES ===\n" + "\n".join(directives)
-            return base_prompt + directive_text
+        # 4. Current Game State (READ-ONLY for LLM)
+        game = self.state.current
+        state_context = f"""
+=== CURRENT GAME STATE (READ ONLY) ===
+Turn: {game.turn_count}
+Current Affinity with {game.companion_name}: {game.affinity.get(game.companion_name, 0)}/100
+Location: {game.location}
+Time: {game.time_of_day}
+Active Flags: {list(game.flags.keys())[:5]}...
+
+CRITICAL: You CANNOT directly modify these numbers. 
+Describe the scene and suggest changes; the system will validate and apply them.
+"""
+        context_sections.append(state_context)
+        
+        if context_sections:
+            context_text = "\n\n".join(context_sections)
+            return f"{base_prompt}\n\n{context_text}"
         
         return base_prompt
     
@@ -446,7 +632,15 @@ class GameEngine:
         """Costruisce SceneAnalysis dai metadata."""
         from core.models import CompositionType
         
-        primary = self.state.current.companion_name
+        # Usa il predicted_subject dall'analisi predittiva se disponibile
+        # Questo permette di gestire NPC generici (es. bibliotecaria) diversi dalla companion corrente
+        predicted_subject = predictive_analysis.get("primary_subject")
+        if predicted_subject:
+            primary = predicted_subject
+        else:
+            primary = self.state.current.companion_name
+        
+        # Se l'LLM suggerisce un cambio companion via npc_updates, usa quello
         if response.updates and response.updates.npc_updates:
             primary = response.updates.npc_updates.get("companion", primary)
         
@@ -506,6 +700,9 @@ NARRATIVE: {narrative_context if narrative_context else 'N/A'}
 
 AFFINITY: {self.state.current.affinity}"""
         
+        save_dir = Path("storage/videos")
+        save_dir.mkdir(parents=True, exist_ok=True)
+        
         return await self.video_gen.generate(
             llm_client=self.llm,
             image_path=image_path,
@@ -513,9 +710,73 @@ AFFINITY: {self.state.current.affinity}"""
             character=self.state.current.companion_name,
             location=self.state.current.location,
             action=action,
+            save_dir=save_dir,
             motion_speed=self.settings.video_motion_speed,
             user_action=user_action
         )
+    
+    def _build_dialogue_tone(self, char_name: str, affinity: int) -> str:
+        """Costruisce il dialogue tone dinamico basato sull'affinità.
+        
+        Legge dal YAML del personaggio la configurazione dialogue_tone
+        e seleziona il tier appropriato in base all'affinità corrente.
+        """
+        companion_data = self.world_data.get("companions", {}).get(char_name)
+        if not companion_data:
+            return f"Speak as {char_name} naturally."
+        
+        dialogue_config = getattr(companion_data, 'dialogue_tone', None)
+        if not dialogue_config:
+            # Fallback se non c'è dialogue_tone nel YAML
+            return f"**{char_name}**: Speak in character based on affinity level {affinity}."
+        
+        # Ottieni base e tiers
+        base = dialogue_config.get("base", f"Personaggio {char_name}")
+        tiers = dialogue_config.get("affinity_tiers", {})
+        
+        # Trova il tier corretto in base all'affinità
+        current_tier = None
+        for tier_range, tier_data in tiers.items():
+            # Parse range come "0-25", "26-50", ecc.
+            if "-" in tier_range:
+                min_aff, max_aff = tier_range.split("-")
+                if int(min_aff) <= affinity <= int(max_aff):
+                    current_tier = tier_data
+                    break
+        
+        # Se non trovato, usa il primo tier o base
+        if not current_tier and tiers:
+            current_tier = list(tiers.values())[0]
+        
+        if not current_tier:
+            return f"**{char_name}**: {base}"
+        
+        # Costruisci il testo del dialogue tone
+        tier_name = current_tier.get("name", "Unknown")
+        tone_desc = current_tier.get("tone", base)
+        examples = current_tier.get("examples", [])
+        markers = current_tier.get("voice_markers", [])
+        
+        lines = [
+            f"**{char_name} - {tier_name} (Affinity: {affinity})**",
+            f"",
+            f"**TONE:** {tone_desc}",
+            f"",
+        ]
+        
+        if examples:
+            lines.append("**EXAMPLE PHRASES:**")
+            for ex in examples[:3]:  # Max 3 esempi
+                lines.append(f'  "{ex}"')
+            lines.append("")
+        
+        if markers:
+            lines.append("**VOICE MARKERS:**")
+            for marker in markers[:4]:  # Max 4 markers
+                lines.append(f"  - {marker}")
+            lines.append("")
+        
+        return "\n".join(lines)
     
     def _build_system_prompt(self) -> str:
         """Costruisce system prompt per LLM."""
@@ -528,6 +789,9 @@ AFFINITY: {self.state.current.affinity}"""
         char_name = game.companion_name
         current_aff = game.affinity.get(char_name, 0)
         partner_pers = self.state.get_personality_for_affinity(char_name, self.world_data)
+        
+        # NUOVO: Genera dialogue_tone dinamico basato sull'affinità
+        dialogue_tone = self._build_dialogue_tone(char_name, current_aff)
         
         npc_instructions = ""
         for npc_name in self.world_data.get("companions", {}).keys():
@@ -547,6 +811,9 @@ AFFINITY: {self.state.current.affinity}"""
 All characters are consenting adults aged 21+. 
 Use artistic, metaphorical, and suggestive language.
 Focus on emotions, atmosphere, tension, and character dynamics.]\n"""
+        
+        # Note: Player context and Psychology context are injected BEFORE main prompt
+        # to influence LLM behavior without modifying the system prompt file
         
         # Aggiungi contesto Player Character (NUOVO) - VERSIONE COMPLETA
         player_context = ""
@@ -583,6 +850,7 @@ Background: {pc_identity.get('background', 'New student')}
                 events_str="",
                 char_name=char_name,
                 partner_personality=partner_pers,
+                dialogue_tone=dialogue_tone,
                 npc_instructions=npc_instructions,
                 time_of_day=game.time_of_day,
                 location=game.location,
@@ -637,3 +905,112 @@ RULES:
 4. All characters are adults (18+)
 5. Acknowledge the player as "the new transfer student" if appropriate
 """
+    
+    def _validate_llm_updates(self, response: LLMResponse, current_companion: str) -> GameStateUpdate:
+        """
+        Validate LLM-proposed updates against game rules.
+        Python is the source of truth; LLM suggestions are advisory only.
+        """
+        if not response.updates:
+            return GameStateUpdate()
+        
+        proposed = response.updates
+        validated = GameStateUpdate()
+        
+        # 1. Validate Affinity Changes
+        if proposed.affinity_change:
+            validated.affinity_change = {}
+            
+            # Retrocompatibilità: se affinity_change è un numero, converti in dizionario
+            affinity_changes = proposed.affinity_change
+            if isinstance(affinity_changes, (int, float)):
+                # Numero singolo - applica al companion corrente
+                affinity_changes = {current_companion: int(affinity_changes)}
+                print(f"[Validate] Converted legacy affinity_change to: {affinity_changes}")
+            
+            for char, delta in affinity_changes.items():
+                # Clamp to reasonable range per turn (-5 to +5)
+                clamped_delta = max(-5, min(5, delta))
+                
+                # Check personality-based modifiers
+                if self.personality_engine:
+                    imp = self.personality_engine.impressions.get(char)
+                    if imp:
+                        # If high fear, reduce positive gains
+                        if imp.fear > 50 and clamped_delta > 0:
+                            clamped_delta = max(1, clamped_delta - 2)
+                        # If high attraction, boost positive gains slightly
+                        if imp.attraction > 60 and clamped_delta > 0:
+                            clamped_delta = min(5, clamped_delta + 1)
+                    
+                    # Apply jealousy impact (if player has been with other companions)
+                    if char == current_companion:
+                        jealousy = self.personality_engine.get_jealousy_impact(char)
+                        if jealousy["affinity_modifier"] != 0:
+                            old_delta = clamped_delta
+                            clamped_delta = max(-5, min(5, clamped_delta + jealousy["affinity_modifier"]))
+                            if clamped_delta != old_delta:
+                                print(f"[Jealousy] {char}: affinity change modified by {jealousy['affinity_modifier']} due to jealousy")
+                
+                validated.affinity_change[char] = clamped_delta
+                
+                # Log if we modified the value
+                if clamped_delta != delta:
+                    print(f"[Validate] Affinity change for {char}: {delta} -> {clamped_delta}")
+        
+        # 2. Validate Flag Changes (prevent LLM from inventing arbitrary flags)
+        if proposed.flags:
+            validated.flags = {}
+            for flag_name, value in proposed.flags.items():
+                # Only allow known flag patterns or location/time updates
+                allowed_patterns = [
+                    "luna_", "stella_", "maria_",  # Character flags
+                    "location_", "time_",           # World state
+                    "quest_", "event_"              # Quest/Story flags
+                ]
+                if any(flag_name.startswith(p) for p in allowed_patterns):
+                    validated.flags[flag_name] = value
+                else:
+                    print(f"[Validate] Rejected unknown flag: {flag_name}")
+        
+        # 3. Validate Outfit Changes
+        if proposed.current_outfit:
+            # Check if outfit exists in wardrobe for this character
+            char_config = self.world_data.get("companions", {}).get(current_companion)
+            if char_config and char_config.wardrobe:
+                if proposed.current_outfit in char_config.wardrobe:
+                    validated.current_outfit = proposed.current_outfit
+                else:
+                    print(f"[Validate] Rejected unknown outfit: {proposed.current_outfit}")
+        
+        # 4. Validate Location/Time (must be from predefined set)
+        if proposed.location:
+            valid_locations = list(self.world_data.get("locations", {}).keys())
+            if proposed.location in valid_locations or proposed.location in [
+                "Classroom 3B", "School Gate", "Library", "Gym", "Nurse Office"
+            ]:
+                validated.location = proposed.location
+            else:
+                print(f"[Validate] Rejected unknown location: {proposed.location}")
+        
+        if proposed.time_of_day:
+            if proposed.time_of_day in ["Morning", "Afternoon", "Evening", "Night"]:
+                validated.time_of_day = proposed.time_of_day
+        
+        # 5. Copy other fields that don't need validation
+        if proposed.new_fact:
+            validated.new_fact = proposed.new_fact
+        
+        if proposed.add_item:
+            validated.add_item = proposed.add_item
+        
+        if proposed.remove_item:
+            validated.remove_item = proposed.remove_item
+        
+        if proposed.stat_changes:
+            validated.stat_changes = proposed.stat_changes
+        
+        if proposed.npc_updates:
+            validated.npc_updates = proposed.npc_updates
+        
+        return validated

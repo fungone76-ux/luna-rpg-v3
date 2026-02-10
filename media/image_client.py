@@ -25,12 +25,14 @@ class ImageClient:
     async def generate(
         self, 
         prompt_result: PromptResult,
+        character_name: str = "Luna",
         save_dir: Optional[Path] = None
     ) -> Optional[Path]:
         """Genera immagine e restituisce il path salvato.
         
         Args:
             prompt_result: Risultato dal prompt builder
+            character_name: Nome del personaggio per il filename
             save_dir: Directory dove salvare (default: storage/images)
         
         Returns:
@@ -69,7 +71,7 @@ class ImageClient:
                     save_dir.mkdir(parents=True, exist_ok=True)
                     
                     timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-                    filename = f"luna_{timestamp}.png"
+                    filename = f"{character_name}_{timestamp}.png"
                     filepath = save_dir / filename
                     
                     with open(filepath, "wb") as f:

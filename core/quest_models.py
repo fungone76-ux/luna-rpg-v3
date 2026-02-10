@@ -75,10 +75,13 @@ class QuestStage(BaseModel):
 
 class QuestActivation(BaseModel):
     """Come si attiva una quest."""
-    type: Literal["manual", "auto", "random", "trigger"]
+    type: Literal["manual", "auto", "random", "trigger", "scheduled"]
     chance: Optional[float] = None  # Per random (0.0-1.0)
     trigger_event: Optional[str] = None
     conditions: List[Condition] = Field(default_factory=list)
+    # Per type="scheduled"
+    day: Optional[int] = None
+    time: Optional[str] = None
 
 
 class QuestRewards(BaseModel):
@@ -130,6 +133,20 @@ class AffinityTier(BaseModel):
     unlock_outfits: List[str] = Field(default_factory=list)
 
 
+class OutfitDefinition(BaseModel):
+    """Definizione completa di un outfit con descrizione e SD prompt.
+    
+    NOTE: This is an EXPERIMENTAL feature. The sd_prompt field provides
+    guidelines for LLM to generate ComfyUI-compatible prompts, but the
+    actual effectiveness needs validation. Consider these as examples
+    that the LLM can modify based on narrative context.
+    
+    TODO: Review and tune prompts based on actual image generation results.
+    """
+    description: str
+    sd_prompt: str
+
+
 class PersonalitySystem(BaseModel):
     """Sistema personality dinamico (dal nuovo YAML)."""
     core_traits: Dict[str, str] = Field(default_factory=dict)
@@ -143,7 +160,8 @@ class CompanionV3Config(BaseModel):
     name: str
     base_prompt: str
     default_outfit: str
-    wardrobe: Dict[str, str]
+    # Supporta sia stringhe (legacy) che OutfitDefinition (nuovo)
+    wardrobe: Dict[str, Any]
     personality_system: Optional[PersonalitySystem] = None
     # Per backward compatibility
     personality_tiers: List[PersonalityTier] = Field(default_factory=list)
@@ -176,7 +194,12 @@ class GlobalEvent(BaseModel):
     """Evento globale casuale."""
     meta: Dict[str, str]
     trigger: Dict[str, Any]
-    effect: GlobalEventEffect
+    # Supporta sia effect (Legacy) che effects (nuovo formato)
+    effect: Optional[GlobalEventEffect] = None
+    effects: Optional[Dict[str, Any]] = None  # Nuovo formato modulare
+    on_start: Optional[List[QuestAction]] = None  # Nuovo formato
+    on_end: Optional[List[QuestAction]] = None  # Nuovo formato
+    narrative_prompt: Optional[str] = None  # Nuovo formato
     on_expire: Optional[List[QuestAction]] = None
     special_conditions: Optional[List[Dict[str, Any]]] = None
     variants: Optional[List[Dict[str, Any]]] = None

@@ -1,6 +1,6 @@
 """Base classes and constants for prompt building."""
 from dataclasses import dataclass
-from typing import Dict, List, Optional, Tuple
+from typing import Any, Dict, List, Optional, Tuple
 
 
 @dataclass
@@ -97,12 +97,29 @@ def remove_conflicting_footwear(outfit_desc: str, visual_context: str) -> str:
 def get_outfit_for_character(
     char_name: str,
     current_outfit_key: str,
-    world_wardrobe: Dict[str, Dict[str, str]],
+    world_wardrobe: Dict[str, Any],
     visual_context: str = ""
 ) -> str:
-    """Costruisce la stringa outfit per un personaggio."""
+    """Costruisce la stringa outfit per un personaggio.
+    
+    Usa 'sd_prompt' se disponibile (per ComfyUI), altrimenti 'description'.
+    """
     wardrobe = world_wardrobe.get(char_name, {})
-    outfit_desc = wardrobe.get(current_outfit_key, current_outfit_key)
+    outfit_data = wardrobe.get(current_outfit_key, current_outfit_key)
+    
+    # DEBUG: Log per verificare cosa arriva
+    print(f"    [DEBUG Outfit] char={char_name}, key={current_outfit_key}")
+    print(f"    [DEBUG Outfit] type={type(outfit_data)}, data={str(outfit_data)[:100]}...")
+    
+    # Se è un dizionario (nuovo formato YAML), prendi sd_prompt o description
+    if isinstance(outfit_data, dict):
+        # Priorità: sd_prompt (per ComfyUI) > description (fallback)
+        outfit_desc = outfit_data.get("sd_prompt") or outfit_data.get("description") or current_outfit_key
+        print(f"    [DEBUG Outfit] Using DICT format, sd_prompt={outfit_data.get('sd_prompt') is not None}")
+    else:
+        # Formato vecchio/stringa
+        outfit_desc = outfit_data
+        print(f"    [DEBUG Outfit] Using STRING format (legacy)")
     
     # Pulizia
     clean_desc = str(outfit_desc).lower().replace("wearing ", "")

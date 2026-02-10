@@ -157,16 +157,16 @@ Determine the image composition."""
     
     def _sanitize_analysis(self, data: dict, available: list[str]) -> SceneAnalysis:
         """Sanitizza e valida l'analisi LLM."""
-        # Verifica che i nomi siano validi
+        # Primary subject: può essere una companion CONOSCIUTA o un NPC generico
         primary = data.get("primary_subject")
-        if primary and primary not in available:
-            primary = None
         
+        # Secondary: solo companion conosciute (NPC generici non hanno LoRA)
         secondary = [
             s for s in data.get("secondary_subjects", [])
             if s in available and s != primary
         ]
         
+        # Background: solo companion conosciute
         background = [
             b for b in data.get("background_mentions", [])
             if b in available and b != primary and b not in secondary

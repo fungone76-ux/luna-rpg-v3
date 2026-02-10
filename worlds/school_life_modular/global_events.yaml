@@ -1,0 +1,354 @@
+# ============================================================
+# GLOBAL EVENTS - School Life v3
+# 9 atmospheric/random events
+# ============================================================
+
+global_events:
+  # ========================================
+  # WEATHER EVENTS
+  # ========================================
+  
+  rainstorm:
+    meta:
+      title: "Sudden Downpour"
+      description: "Heavy rain traps students at school"
+      type: "weather"
+    
+    trigger:
+      type: "random"
+      chance: 0.15
+      allowed_times: ["Afternoon", "Evening"]
+    
+    effects:
+      duration: 3  # turns
+      location_modifiers:
+        - location: "Entrance"
+          blocked: true
+          message: "The rain is too heavy to go outside."
+      
+      visual_tags:
+        add: ["rain", "wet", "dark_sky", "puddles"]
+      
+      atmosphere_change: "dramatic, trapped"
+      bgm_override: "rain_ambience"
+      lighting_override: "dark_storm"
+      
+      quest_triggers:
+        - quest_id: "stella_shared_umbrella"
+          condition: "active"
+    
+    on_start:
+      - action: "set_flag"
+        key: "rainstorm_active"
+        value: true
+      - action: "set_emotional_state"
+        character: "{current_companion}"
+        state: "flustered"
+    
+    on_end:
+      - action: "set_flag"
+        key: "rainstorm_active"
+        value: false
+      - action: "set_emotional_state"
+        character: "{current_companion}"
+        state: "default"
+    
+    narrative_prompt: "Dark clouds roll in suddenly. Thunder crashes. Students crowd the windows watching the deluge. You're trapped at school with {current_companion}..."
+  
+  # ========================================
+  # SCHOOL EVENTS
+  # ========================================
+  
+  fire_drill:
+    meta:
+      title: "Fire Drill"
+      description: "Emergency evacuation interrupts everything"
+      type: "school_emergency"
+    
+    trigger:
+      type: "scheduled"
+      day: 5  # First Friday
+      time: "Morning"
+    
+    effects:
+      duration: 2
+      location_override: "Stadium"
+      force_all_npcs: true
+      
+      visual_tags:
+        add: ["crowds", "confusion", "outdoor"]
+      
+      atmosphere_change: "chaotic, organized_chaos"
+    
+    on_start:
+      - action: "set_flag"
+        key: "fire_drill_active"
+        value: true
+      - action: "set_location"
+        target: "Stadium"
+    
+    on_end:
+      - action: "set_flag"
+        key: "fire_drill_active"
+        value: false
+    
+    narrative_prompt: "The fire alarm blares! Everyone evacuates to the sports field. You find yourself standing next to {current_companion} in the crowd. She looks annoyed by the interruption..."
+  
+  blackout:
+    meta:
+      title: "Power Outage"
+      description: "The school goes dark"
+      type: "school_emergency"
+    
+    trigger:
+      type: "random"
+      chance: 0.08
+      allowed_times: ["Afternoon", "Evening"]
+    
+    effects:
+      duration: 3
+      
+      visual_tags:
+        add: ["darkness", "flashlights", "shadows", "candlelight"]
+      
+      atmosphere_change: "mysterious, intimate, tense"
+      bgm_override: "silence_with_whispers"
+      lighting_override: "emergency_lights"
+      
+      quest_triggers:
+        - quest_id: "stella_hide_seek"
+          condition: "active"
+    
+    on_start:
+      - action: "set_flag"
+        key: "blackout_active"
+        value: true
+    
+    on_end:
+      - action: "set_flag"
+        key: "blackout_active"
+        value: false
+    
+    narrative_prompt: "The lights flicker and die. Complete darkness. Students gasp and laugh nervously. In the dark, anything could happen. You feel {current_companion}'s hand brush against yours..."
+  
+  assembly:
+    meta:
+      title: "School Assembly"
+      description: "Principal addresses the entire school"
+      type: "school_scheduled"
+    
+    trigger:
+      type: "scheduled"
+      day: 1  # First Monday
+      time: "Morning"
+    
+    effects:
+      duration: 1
+      location_override: "Gym"
+      force_all_npcs: true
+      
+      visual_tags:
+        add: ["crowd", "bleachers", "formal"]
+      
+      atmosphere_change: "formal, bored"
+    
+    on_start:
+      - action: "set_flag"
+        key: "assembly_active"
+        value: true
+      - action: "set_location"
+        target: "Gym"
+    
+    on_end:
+      - action: "set_flag"
+        key: "assembly_active"
+        value: false
+    
+    narrative_prompt: "The entire school crams into the gym. You sit on the hard bleachers next to {current_companion}. The Principal drones on about 'behavior' and 'grades.' {current_companion} whispers to you..."
+  
+  # ========================================
+  # SOCIAL EVENTS
+  # ========================================
+  
+  popular_girl_entourage:
+    meta:
+      title: "Stella's Fan Club"
+      description: "Stella is surrounded by admirers"
+      type: "social_dynamic"
+    
+    trigger:
+      type: "conditional"
+      conditions:
+        - type: "companion"
+          target: "Stella"
+        - type: "affinity"
+          target: "Stella"
+          operator: "lt"
+          value: 40
+        - type: "random"
+          chance: 0.3
+    
+    effects:
+      duration: 2
+      
+      visual_tags:
+        add: ["crowd", "admiring_boys", "jealous_girls"]
+      
+      atmosphere_change: "social_pressure, popularity_contest"
+      
+      blocking_actions:
+        - "approach_directly"
+        - "private_conversation"
+    
+    on_start:
+      - action: "set_emotional_state"
+        character: "Stella"
+        state: "competitive"
+    
+    narrative_prompt: "Stella is holding court in the hallway. Boys hang on her every word, girls try to join her circle. She makes eye contact with you across the crowd, a smirk on her face. Can you break through?"
+  
+  luna_authority_moment:
+    meta:
+      title: "Disciplinary Action"
+      description: "Luna scolding students creates tension"
+      type: "social_dynamic"
+    
+    trigger:
+      type: "conditional"
+      conditions:
+        - type: "companion"
+          target: "Luna"
+        - type: "location"
+          operator: "in"
+          value: ["Main Hallway", "Entrance"]
+        - type: "random"
+          chance: 0.25
+    
+    effects:
+      duration: 1
+      
+      visual_tags:
+        add: ["fear", "authority", "crowd_watching"]
+      
+      atmosphere_change: "tense, dominant"
+      
+      emotional_override:
+        character: "Luna"
+        state: "authoritative"
+    
+    narrative_prompt: "A group of students are being disciplined. Luna stands tall, her voice cutting through the air. She spots you watching. Her expression softens just for a moment before returning to stern. 'You there! This doesn't concern you.' But her eyes say something else..."
+  
+  maria_cleaning_time:
+    meta:
+      title: "The Cleaning Lady's Territory"
+      description: "Maria is cleaning, creating opportunities"
+      type: "social_dynamic"
+    
+    trigger:
+      type: "conditional"
+      conditions:
+        - type: "companion"
+          target: "Maria"
+        - type: "time"
+          operator: "eq"
+          value: "Evening"
+        - type: "random"
+          chance: 0.4
+    
+    effects:
+      duration: 2
+      
+      visual_tags:
+        add: ["cleaning_supplies", "bending_over", "empty_hallways"]
+      
+      atmosphere_change: "private, after_hours"
+      
+      location_bonus:
+        - location: "Storage Room"
+          affinity_bonus: 5
+    
+    on_start:
+      - action: "set_emotional_state"
+        character: "Maria"
+        state: "chatty"
+    
+    narrative_prompt: "The school is quiet except for the sound of Maria's cleaning. She's humming an old song as she works. She doesn't notice you watching her from the doorway... or does she?"
+  
+  # ========================================
+  # INTIMATE EVENTS
+  # ========================================
+  
+  alone_in_classroom:
+    meta:
+      title: "Empty Classroom"
+      description: "You and your companion are alone after hours"
+      type: "intimate_opportunity"
+    
+    trigger:
+      type: "conditional"
+      conditions:
+        - type: "affinity"
+          target: "{current_companion}"
+          operator: "gte"
+          value: 30
+        - type: "time"
+          operator: "eq"
+          value: "Evening"
+        - type: "random"
+          chance: 0.2
+    
+    effects:
+      duration: 3
+      location_lock: "Classroom"
+      
+      visual_tags:
+        add: ["sunset_light", "empty_desks", "private"]
+      
+      atmosphere_change: "romantic, isolated"
+      lighting_override: "golden_hour_beams"
+      
+      affinity_multiplier: 1.5
+      
+      quest_triggers:
+        - quest_id: "luna_classroom_night"
+          condition: "available"
+    
+    on_start:
+      - action: "set_emotional_state"
+        character: "{current_companion}"
+        state: "flustered"
+    
+    narrative_prompt: "The classroom is empty except for you and {current_companion}. Golden sunlight streams through the windows, illuminating dust motes. She stands by the window, looking at you expectantly. No one will disturb you here..."
+  
+  festival_prep:
+    meta:
+      title: "Festival Preparation"
+      description: "Students preparing for the cultural festival"
+      type: "seasonal"
+    
+    trigger:
+      type: "scheduled"
+      day: 20  # Day before festival
+      time: "Afternoon"
+    
+    effects:
+      duration: 5  # Until festival day
+      
+      visual_tags:
+        add: ["decorations", "busy_students", "crafts", "excitement"]
+      
+      atmosphere_change: "energetic, collaborative"
+      
+      global_affinity_bonus: 2
+    
+    on_start:
+      - action: "set_flag"
+        key: "festival_prep_active"
+        value: true
+    
+    on_end:
+      - action: "set_flag"
+        key: "festival_prep_active"
+        value: false
+    
+    narrative_prompt: "The entire school is buzzing with festival preparation. Students hang decorations, build stalls, practice performances. {current_companion} is helping too, looking at you with a question in her eyes..."

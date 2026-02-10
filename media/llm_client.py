@@ -60,7 +60,8 @@ class LLMClient:
         user_input: str,
         system_instruction: str,
         history: List[Dict[str, str]],
-        memory_context: str = ""
+        memory_context: str = "",
+        companion_name: str = "companion"
     ) -> LLMResponse:
         """Genera risposta dall'LLM usando il provider attivo."""
         
@@ -76,14 +77,14 @@ class LLMClient:
             if self.moonshot_api_key:
                 print("[->] Gemini failed, trying Moonshot fallback...")
                 return await self._generate_moonshot(
-                    user_input, system_instruction, history, memory_context
+                    user_input, system_instruction, history, memory_context, companion_name
                 )
             return result
             
         elif self.provider == "moonshot" and self.moonshot_api_key:
             # Try JSON mode first (more reliable)
             result = await self._generate_moonshot_json(
-                user_input, system_instruction, history, memory_context
+                user_input, system_instruction, history, memory_context, companion_name
             )
             
             # If JSON mode succeeded
@@ -116,7 +117,7 @@ class LLMClient:
             )
         elif self.moonshot_api_key:
             return await self._generate_moonshot(
-                user_input, system_instruction, history, memory_context
+                user_input, system_instruction, history, memory_context, companion_name
             )
         else:
             return LLMResponse(
@@ -246,7 +247,8 @@ class LLMClient:
         user_input: str,
         system_instruction: str,
         history: List[Dict[str, str]],
-        memory_context: str
+        memory_context: str,
+        companion_name: str = "companion"
     ) -> LLMResponse:
         """Generate using Moonshot API (OpenAI-compatible)."""
         
@@ -635,7 +637,8 @@ class LLMClient:
         user_input: str,
         system_instruction: str,
         history: List[Dict[str, str]],
-        memory_context: str
+        memory_context: str,
+        companion_name: str = "companion"
     ) -> LLMResponse:
         """Generate using Moonshot with JSON mode (forced JSON output).
         
@@ -680,8 +683,11 @@ class LLMClient:
                     "description": "Current location"
                 },
                 "affinity_change": {
-                    "type": "number",
-                    "description": "Affinity change (+/- integer)"
+                    "anyOf": [
+                        {"type": "number", "description": "Legacy: single affinity value (e.g., 3)"},
+                        {"type": "object", "description": "New: dict with character names (e.g., {\"Luna\": 3})"}
+                    ],
+                    "description": "Affinity change - either a number for current companion, or dict mapping character names to values"
                 },
                 "current_outfit": {
                     "type": "string",
@@ -705,7 +711,7 @@ CRITICAL: You MUST respond with a valid JSON object matching this exact schema:
 - approach_used: One of standard/physical_action/question/choice (optional)
 - time_of_day: Morning/Afternoon/Evening/Night (optional)
 - location: Location name (optional)
-- affinity_change: Number like +2 or -1 (optional)
+- affinity_change: Dict like {{"Luna": 3}} or number like 3 (optional)
 - current_outfit: Outfit key (optional)
 
 Example response:
@@ -715,7 +721,7 @@ Example response:
   "tags_en": ["medium shot", "eye level", "walking pose", "hand on hip", "looking at viewer", "classroom", "afternoon light", "depth of field", "masterpiece"],
   "body_focus": "",
   "approach_used": "physical_action",
-  "affinity_change": 2
+  "affinity_change": {{"Luna": 2}}
 }}"""
         
         messages.append({
@@ -808,7 +814,22 @@ Example response:
                             if "current_outfit" in json_data and json_data["current_outfit"]:
                                 updates["current_outfit"] = json_data["current_outfit"]
                             if "affinity_change" in json_data:
-                                updates["affinity_change"] = {"companion": int(json_data["affinity_change"])}
+                                # Gestisci sia formato numero (vecchio) che dizionario (nuovo)
+                                aff_data = json_data["affinity_change"]
+                                if isinstance(aff_data, dict):
+                                    # Nuovo formato: {"Luna": 3}
+                                    updates["affinity_change"] = aff_data
+                                elif isinstance(aff_data, (int, float)):
+                                    # Vecchio formato: 3 -> converti in dizionario
+                                    char_key = companion_name if companion_name != "companion" else "Luna"
+                                    updates["affinity_change"] = {char_key: int(aff_data)}
+                                else:
+                                    # Fallback per stringhe o altri tipi
+                                    try:
+                                        char_key = companion_name if companion_name != "companion" else "Luna"
+                                        updates["affinity_change"] = {char_key: int(aff_data)}
+                                    except:
+                                        pass
                             
                             if updates:
                                 result.updates = GameStateUpdate(**updates)

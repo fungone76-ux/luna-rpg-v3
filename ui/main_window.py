@@ -17,7 +17,6 @@ from qasync import asyncSlot, asyncClose
 
 from core.engine import GameEngine
 from core.database import db_manager
-from media.comfy_image_client import ComfyImageClient
 from media.video_client import VideoClient
 from ui.startup_dialog import StartupDialog
 from ui.video_action_dialog import VideoActionDialog
@@ -429,13 +428,13 @@ class HaremProgressWidget(QGroupBox):
     
     def __init__(self, parent=None):
         super().__init__("🎯 True Harem Progress", parent)
-        self.setMaximumHeight(120)
+        self.setMaximumHeight(150)
         
         layout = QVBoxLayout(self)
         
         # Progresso totale
         self.progress_bar = QProgressBar()
-        self.progress_bar.setRange(0, 3)  # 3 companion
+        self.progress_bar.setRange(0, 100)  # Sarà aggiornato dinamicamente
         self.progress_bar.setValue(0)
         self.progress_bar.setTextVisible(True)
         self.progress_bar.setFormat("%v / %m conquistate")
@@ -457,24 +456,44 @@ class HaremProgressWidget(QGroupBox):
         """)
         layout.addWidget(self.progress_bar)
         
-        # Stato singole companion
+        # Stato singole companion (container per layout dinamico)
         self.status_layout = QHBoxLayout()
-        self.lbl_luna = QLabel("🔒 Luna")
-        self.lbl_stella = QLabel("🔒 Stella")
-        self.lbl_maria = QLabel("🔒 Maria")
-        
-        for lbl in [self.lbl_luna, self.lbl_stella, self.lbl_maria]:
-            lbl.setStyleSheet("color: #666;")
-            lbl.setAlignment(Qt.AlignCenter)
-            self.status_layout.addWidget(lbl)
-        
+        self.companion_labels = {}  # name -> QLabel
         layout.addLayout(self.status_layout)
         
         # Messaggio finale
-        self.lbl_final = QLabel("Conquista tutte e tre per il True Harem Ending!")
+        self.lbl_final = QLabel("Conquista tutti i target per il True Harem Ending!")
         self.lbl_final.setStyleSheet("color: #888; font-style: italic; font-size: 10px;")
         self.lbl_final.setAlignment(Qt.AlignCenter)
         layout.addWidget(self.lbl_final)
+        
+        self.total_targets = 0
+    
+    def set_companions(self, companion_names: List[str]):
+        """Inizializza il widget con la lista dei companion del mondo."""
+        # Pulisci layout esistente
+        while self.status_layout.count():
+            item = self.status_layout.takeAt(0)
+            if item.widget():
+                item.widget().deleteLater()
+        
+        self.companion_labels = {}
+        self.total_targets = len(companion_names)
+        
+        # Aggiorna range progress bar
+        self.progress_bar.setRange(0, max(1, self.total_targets))
+        
+        # Crea label per ogni companion
+        for name in companion_names:
+            lbl = QLabel(f"🔒 {name}")
+            lbl.setStyleSheet("color: #666;")
+            lbl.setAlignment(Qt.AlignCenter)
+            self.status_layout.addWidget(lbl)
+            self.companion_labels[name] = lbl
+        
+        # Aggiorna messaggio
+        if self.total_targets > 0:
+            self.lbl_final.setText(f"Conquista tutti e {self.total_targets} per il True Harem Ending!")
     
     def update_progress(self, conquered: List[str]):
         """Aggiorna progresso."""
@@ -482,20 +501,13 @@ class HaremProgressWidget(QGroupBox):
         self.progress_bar.setValue(count)
         
         # Aggiorna icone
-        if "Luna" in conquered:
-            self.lbl_luna.setText("✅ Luna")
-            self.lbl_luna.setStyleSheet("color: #4CAF50; font-weight: bold;")
-        
-        if "Stella" in conquered:
-            self.lbl_stella.setText("✅ Stella")
-            self.lbl_stella.setStyleSheet("color: #4CAF50; font-weight: bold;")
-        
-        if "Maria" in conquered:
-            self.lbl_maria.setText("✅ Maria")
-            self.lbl_maria.setStyleSheet("color: #4CAF50; font-weight: bold;")
+        for name in conquered:
+            if name in self.companion_labels:
+                self.companion_labels[name].setText(f"✅ {name}")
+                self.companion_labels[name].setStyleSheet("color: #4CAF50; font-weight: bold;")
         
         # Vittoria!
-        if count == 3:
+        if self.total_targets > 0 and count >= self.total_targets:
             self.lbl_final.setText("🎉 TRUE HAREM ENDING UNLOCKED! 🎉")
             self.lbl_final.setStyleSheet("color: #FFD700; font-weight: bold; font-size: 12px;")
 
@@ -519,6 +531,7 @@ class MainWindow(QMainWindow):
         self.is_processing = False
         self._initialized = False
         self._unlocked_achievements = set()
+        self.session_logger = None  # Logger per sessione
         
         self._setup_ui()
         self.showMaximized()
@@ -737,24 +750,30 @@ class MainWindow(QMainWindow):
             
             dialog = StartupDialog(self)
             
+            # Carica lista salvataggi nel dialog (DB ora è pronto)
+            dialog.load_saves_sync()
+            
             if dialog.exec() != QDialog.Accepted:
                 self.close()
                 return
             
             selection = dialog.get_selection()
             
-            # Setup RunPod se necessario
-            if selection.get("use_runpod") and selection.get("runpod_id"):
-                import os
-                from config.settings import get_settings
-                
-                get_settings.cache_clear()
-                os.environ["EXECUTION_MODE"] = "RUNPOD"
-                os.environ["RUNPOD_ID"] = selection["runpod_id"]
-                
-                new_settings = get_settings()
-                self.engine.image_gen = ComfyImageClient(new_settings)
-                self.engine.video_gen = VideoClient(new_settings)
+            # Setup client in base alla modalità scelta nello startup dialog
+            use_runpod = selection.get("use_runpod", False)
+            runpod_id = selection.get("runpod_id", "")
+            
+            # Configura i client (SD WebUI in locale, ComfyUI in RunPod)
+            self.engine.setup_clients(use_runpod=use_runpod, runpod_id=runpod_id)
+            
+            # Disabilita il pulsante video se in modalità locale
+            if not use_runpod:
+                self.btn_animate.setEnabled(False)
+                self.btn_animate.setToolTip("Video disabilitato in modalità locale (richiede RunPod)")
+                self.btn_animate.setStyleSheet("background-color: #555; color: #888;")
+                print("[UI] Video generation disabilitato (modalità locale)")
+            else:
+                self.btn_animate.setToolTip("Genera video dall'immagine corrente")
             
             # Crea/carica gioco
             async with db_manager.get_session() as db:
@@ -764,8 +783,14 @@ class MainWindow(QMainWindow):
                         selection["world_id"],
                         selection["companion"]
                     )
+                elif selection["mode"] == "load" and selection.get("session_id"):
+                    session = await self.engine.load_game(db, selection["session_id"])
+                    if not session:
+                        QMessageBox.critical(self, "Error", "Failed to load saved game.")
+                        self.close()
+                        return
                 else:
-                    QMessageBox.information(self, "Load", "Load not yet implemented")
+                    QMessageBox.information(self, "Load", "No saved game selected.")
                     self.close()
                     return
             
@@ -775,6 +800,14 @@ class MainWindow(QMainWindow):
             self._initialized = True
             self._update_status()
             self.input_field.setEnabled(True)
+            
+            # Log inizio gioco
+            if self.session_logger:
+                world_name = self.engine.world_data.get('meta', {}).get('name', 'Unknown')
+                char_name = self.engine.state.current.companion_name
+                self.session_logger.log_event("GAME", f"=== INIZIO PARTITA ===")
+                self.session_logger.log_event("GAME", f"Mondo: {world_name}")
+                self.session_logger.log_event("GAME", f"Personaggio: {char_name}")
             
             await self._process_turn("", is_intro=True)
             
@@ -795,6 +828,10 @@ class MainWindow(QMainWindow):
         
         # Inizializza companion status widget
         self.companion_status.set_companions(companions)
+        
+        # Inizializza harem progress con lista nomi companion
+        companion_names = list(companions.keys())
+        self.harem_progress.set_companions(companion_names)
         
         # Aggiorna UI iniziale
         self._update_quest_ui()
@@ -948,6 +985,10 @@ class MainWindow(QMainWindow):
         if not text:
             return
         
+        # Log input utente
+        if self.session_logger:
+            self.session_logger.log_user_input(text)
+        
         self.input_field.clear()
         self._append_story(f"<b style='color: #4CAF50;'>> You:</b> {text}")
         
@@ -985,6 +1026,19 @@ class MainWindow(QMainWindow):
                     f"<b style='color: #E91E63;'>{char_name}:</b> {result['text']}"
                 )
                 
+                # Log risposta AI con metadati
+                if self.session_logger:
+                    metadata = {
+                        "character": char_name,
+                        "affinity": self.engine.state.current.affinity.get(char_name, 0),
+                        "location": self.engine.state.current.location,
+                        "outfit": self.engine.state.current.current_outfit,
+                        "turn": self.engine.state.current.turn_count,
+                        "image": result.get('image_path', 'None'),
+                        "visual": result.get('visual_en', 'N/A')[:100] + "..." if result.get('visual_en') else 'N/A'
+                    }
+                    self.session_logger.log_ai_response(result['text'], metadata)
+                
                 # Salva contesto video
                 self.last_narrative = result.get('text', '')
                 self.last_visual_desc = result.get('visual_en', '')
@@ -992,6 +1046,9 @@ class MainWindow(QMainWindow):
                 # Mostra immagine
                 if result.get("image_path"):
                     self._show_image(result["image_path"])
+                    # Abilita il pulsante video SOLO se in RunPod e video disponibile
+                    if self.engine._is_runpod_mode and self.engine.video_gen.settings.video_available:
+                        self.btn_animate.setEnabled(True)
                 
                 # Audio
                 if self.chk_voice.isChecked() and not is_intro:
@@ -1114,11 +1171,31 @@ class MainWindow(QMainWindow):
         if not self.current_image:
             return
         
+        # Controllo: video disponibile solo in RunPod
+        if not self.engine._is_runpod_mode:
+            QMessageBox.information(
+                self, 
+                "Video Non Disponibile",
+                "La generazione video è disponibile solo in modalità RunPod (Cloud GPU).\n\n"
+                "In modalità locale puoi comunque generare immagini con SD WebUI.\n"
+                "Per abilitare il video, riavvia e seleziona 'Use RunPod' nelle impostazioni."
+            )
+            return
+        
+        if not self.engine.video_gen.settings.video_available:
+            QMessageBox.warning(
+                self,
+                "Video Non Configurato",
+                "Il video generation non è configurato correttamente.\n"
+                "Verifica che RunPod ID sia corretto."
+            )
+            return
+        
         character = self.engine.state.current.companion_name if self.engine.state else "Luna"
         location = self.engine.state.current.location if self.engine.state else "Unknown"
         
         dialog = VideoActionDialog(character, location, self)
-        if dialog.exec() != dialog.Accepted:
+        if dialog.exec() != QDialog.DialogCode.Accepted:
             return
         
         user_action = dialog.get_action() or "posing"
@@ -1129,7 +1206,7 @@ class MainWindow(QMainWindow):
         try:
             video_path = await self.engine.generate_video(
                 self.current_image,
-                action="posing",
+                action=user_action,
                 narrative_context=self.last_narrative,
                 visual_description=self.last_visual_desc,
                 user_action=user_action

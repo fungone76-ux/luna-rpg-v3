@@ -1,7 +1,7 @@
 {
   "1": {
     "inputs": {
-      "ckpt_name": "Luna_Main_Model.safetensors"
+      "ckpt_name": "Modello_Scaricato.safetensors"
     },
     "class_type": "CheckpointLoaderSimple",
     "_meta": {

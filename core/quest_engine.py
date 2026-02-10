@@ -5,7 +5,7 @@ import re
 
 from core.quest_models import (
     QuestDefinition, QuestState, QuestStatus, QuestStage, 
-    Condition, QuestAction, CompanionV3Config, Milestone
+    Condition, QuestAction, Milestone
 )
 
 
@@ -114,10 +114,6 @@ class QuestEngine:
                 trigger_event = activation.trigger_event
                 if trigger_event and game_state.get("last_event") == trigger_event:
                     activated.append(quest_id)
-            
-            elif activation.type == "random":
-                # Per eventi casuali, il check viene fatto altrove
-                pass
         
         return activated
     
@@ -234,6 +230,32 @@ class QuestEngine:
         
         return reached
     
+    def get_ui_milestone_status(self, companion_name: str, game_state: Dict[str, Any]) -> List[dict]:
+        """
+        Restituisce lo stato di tutti i milestone per la UI.
+        
+        Returns:
+            Lista di dict con 'id', 'name', 'icon', 'reached' per ogni milestone
+        """
+        if not self.milestones or companion_name not in self.milestones:
+            return []
+        
+        # Trova quali milestone sono stati raggiunti
+        reached_milestones = self.check_milestones(companion_name, game_state)
+        reached_ids = {m.id for m in reached_milestones}
+        
+        # Costruisci lista completa per UI
+        result = []
+        for milestone in self.milestones[companion_name]:
+            result.append({
+                'id': milestone.id,
+                'name': milestone.name,
+                'icon': milestone.icon,
+                'reached': milestone.id in reached_ids
+            })
+        
+        return result
+    
     def get_active_quests_context(self) -> str:
         """Genera contesto per il system prompt."""
         if not self.active_states:
@@ -258,20 +280,6 @@ class QuestEngine:
             contexts.append(ctx)
         
         return "\n".join(contexts) if contexts else ""
-    
-    def get_milestones_context(self, companion_name: str) -> str:
-        """Genera contesto milestone per una companion."""
-        if not self.milestones or companion_name not in self.milestones:
-            return ""
-        
-        milestones = self.milestones[companion_name]
-        lines = [f"### {companion_name} Milestones:"]
-        
-        for m in milestones:
-            status = "✅" if m.id.startswith("completed_") else "⬜"
-            lines.append(f"{status} {m.name}")
-        
-        return "\n".join(lines)
     
     def check_endgame_victory(self, game_state: Dict[str, Any]) -> Tuple[bool, List[str]]:
         """
@@ -303,26 +311,6 @@ class QuestEngine:
         victory = len(conquered) == len(all_targets) and len(all_targets) > 0
         
         return victory, conquered
-    
-    def get_ui_milestone_status(self, companion_name: str, game_state: Dict[str, Any]) -> List[Dict[str, Any]]:
-        """Ritorna stato milestone per UI (con icone)."""
-        if not self.milestones or companion_name not in self.milestones:
-            return []
-        
-        result = []
-        milestones = self.milestones[companion_name]
-        
-        for m in milestones:
-            reached = self._evaluate_milestone(m, game_state, companion_name)
-            result.append({
-                "id": m.id,
-                "name": m.name,
-                "icon": m.icon,
-                "reached": reached,
-                "condition": m.condition
-            })
-        
-        return result
     
     # ============================================================
     # METODI PRIVATI

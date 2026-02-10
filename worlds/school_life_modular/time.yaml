@@ -1,0 +1,164 @@
+# ============================================================
+# TIME SYSTEM - School Life v3
+# ============================================================
+
+time_system:
+  # Time of day cycle
+  times_of_day:
+    - id: "Morning"
+      name: "Morning"
+      description: "School starts, fresh energy"
+      visual_modifier: "bright_sunlight, morning_mist"
+      lighting: "morning_golden"
+      activities: ["arrival", "first_period", "homeroom"]
+      npc_density: "high"
+      events_enabled: true
+    
+    - id: "Afternoon"
+      name: "Afternoon"
+      description: "Classes in session, peak activity"
+      visual_modifier: "harsh_midday_sun, clear_skies"
+      lighting: "midday_bright"
+      activities: ["classes", "lunch", "club_activities"]
+      npc_density: "medium"
+      events_enabled: true
+    
+    - id: "Evening"
+      name: "Evening"
+      description: "After school, clubs, cleanup"
+      visual_modifier: "golden_hour, long_shadows, warm_glow"
+      lighting: "golden_hour"
+      activities: ["clubs", "sports", "cleaning"]
+      npc_density: "low"
+      events_enabled: true
+    
+    - id: "Night"
+      name: "Night"
+      description: "School closed, secret meetings only"
+      visual_modifier: "darkness, moonlight, city_lights"
+      lighting: "moonlight"
+      activities: ["secret_meetings", "cleaning_night"]
+      npc_density: "minimal"
+      events_enabled: false
+  
+  # Day progression system
+  days_of_week:
+    - id: "Monday"
+      name: "Monday"
+      school_open: true
+      special_events: []
+    
+    - id: "Tuesday"
+      name: "Tuesday"
+      school_open: true
+      special_events: []
+    
+    - id: "Wednesday"
+      name: "Wednesday"
+      school_open: true
+      special_events: ["early_dismissal"]
+    
+    - id: "Thursday"
+      name: "Thursday"
+      school_open: true
+      special_events: []
+    
+    - id: "Friday"
+      name: "Friday"
+      school_open: true
+      special_events: ["weekend_mood"]
+    
+    - id: "Saturday"
+      name: "Saturday"
+      school_open: false
+      special_events: ["club_activities_only"]
+    
+    - id: "Sunday"
+      name: "Sunday"
+      school_open: false
+      special_events: ["closed"]
+  
+  # Time advancement rules
+  advancement:
+    # Default: time advances after each interaction
+    default_advance: 1  # In abstract "turns"
+    
+    # Location-based time modifiers
+    location_modifiers:
+      Teachers Lounge: +1
+      Library: +1
+      Infirmary: +2
+    
+    # Time boundaries (when to advance to next time period)
+    boundaries:
+      - from: "Morning"
+        to: "Afternoon"
+        trigger: "lunch_time"
+      
+      - from: "Afternoon"
+        to: "Evening"
+        trigger: "classes_end"
+      
+      - from: "Evening"
+        to: "Night"
+        trigger: "sunset"
+      
+      - from: "Night"
+        to: "Morning"
+        trigger: "new_day"
+  
+  # Time-locked locations
+  time_restrictions:
+    Pool:
+      allowed: ["Morning", "Afternoon"]
+      message: "The pool is closed outside school hours."
+    
+    Classroom:
+      allowed: ["Morning", "Afternoon"]
+      evening_access: "requires_permission"
+    
+    Rooftop:
+      allowed: ["Afternoon", "Evening"]
+      message: "The rooftop is locked during class time."
+    
+    Storage Room:
+      allowed: ["Morning", "Afternoon", "Evening", "Night"]
+      # Maria's domain, always accessible to her friends
+  
+  # Time-based events (daily recurring)
+  daily_schedule:
+    Morning:
+      - time: "08:00"
+        event: "school_bell"
+        message: "The morning bell rings. Classes begin."
+      
+      - time: "10:00"
+        event: "break_time"
+        message: "Break time. Students flood the hallways."
+    
+    Afternoon:
+      - time: "12:00"
+        event: "lunch_time"
+        message: "Lunch time. The cafeteria is packed."
+      
+      - time: "13:30"
+        event: "afternoon_classes"
+        message: "Afternoon classes resume."
+      
+      - time: "15:30"
+        event: "classes_end"
+        message: "Final bell. Classes are dismissed."
+    
+    Evening:
+      - time: "17:00"
+        event: "clubs_start"
+        message: "Club activities begin."
+      
+      - time: "19:00"
+        event: "cleanup_time"
+        message: "Cleaning time. Maria is everywhere."
+    
+    Night:
+      - time: "21:00"
+        event: "school_closed"
+        message: "The school is officially closed. Only shadows remain."
