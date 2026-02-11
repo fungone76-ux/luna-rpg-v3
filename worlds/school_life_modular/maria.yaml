@@ -171,5 +171,296 @@ companion:
       coffees_shared: 0
       after_hours_visits: 0
 
-  quests: []
-  milestones: []
+# ============================================================
+# QUESTS - Maria
+# ============================================================
+quests:
+  
+  # --- QUEST 1: Segreti della Scuola ---
+  maria_secrets:
+    meta:
+      title: "The School Secrets"
+      description: "Maria knows everything about everyone"
+      type: "side"
+      character: "Maria"
+    
+    activation:
+      type: "auto"
+      conditions:
+        - type: "affinity"
+          target: "Maria"
+          operator: "gte"
+          value: 15
+    
+    stages:
+      smoke_break:
+        title: "Smoke Break Confessions"
+        description: "Maria shares gossip about Luna"
+        narrative_prompt: "Maria lights a cigarette and looks at you with knowing eyes..."
+        on_enter:
+          - action: "set_location"
+            target: "Storage Room"
+        exit_conditions:
+          - type: "turn_count"
+            operator: "gte"
+            value: 2
+        transitions:
+          - condition: "default"
+            target: "_complete"
+    
+    rewards:
+      affinity:
+        Maria: 8
+      flags:
+        knows_luna_divorce: true
+
+  # --- QUEST 2: Aiutare a Trasportare ---
+  maria_help_carry:
+    meta:
+      title: "Heavy Lifting"
+      description: "Help Maria carry cleaning supplies to the storage room"
+      type: "side"
+      character: "Maria"
+      hidden: true
+    
+    activation:
+      type: "auto"
+      conditions:
+        - type: "affinity"
+          target: "Maria"
+          operator: "gte"
+          value: 20
+    
+    stages:
+      helping:
+        title: "Storage Room"
+        narrative_prompt: "Maria struggles with heavy boxes. 'Hey kid, give an old lady a hand?' Her worn uniform stretches as she lifts, revealing more than she realizes..."
+        on_enter:
+          - action: "set_location"
+            target: "Storage Room"
+        exit_conditions:
+          - type: "action"
+            pattern: "help|carry|lift|assist"
+        transitions:
+          - condition: "default"
+            target: "_complete"
+    
+    rewards:
+      affinity:
+        Maria: 10
+      flags:
+        maria_helped_carry: true
+
+  # --- QUEST 3: Massaggio di Ringraziamento ---
+  maria_massage:
+    meta:
+      title: "The Thank You Massage"
+      description: "Maria offers to repay your help with a massage"
+      type: "side"
+      character: "Maria"
+      hidden: true
+    
+    activation:
+      type: "auto"
+      conditions:
+        - type: "affinity"
+          target: "Maria"
+          operator: "gte"
+          value: 35
+        - type: "flag"
+          key: "maria_helped_carry"
+          value: true
+    
+    stages:
+      the_massage:
+        title: "Teachers' Lounge"
+        narrative_prompt: "It's late. The school is empty. Maria locks the door. 'You helped my old back. Let me... repay you.' She has massage oil and a knowing smile..."
+        on_enter:
+          - action: "set_location"
+            target: "Teachers Lounge"
+          - action: "set_emotional_state"
+            character: "Maria"
+            state: "maternal"
+          - action: "set_time"
+            target: "Evening"
+        exit_conditions:
+          - type: "turn_count"
+            operator: "gte"
+            value: 3
+        transitions:
+          - condition: "default"
+            target: "_complete"
+    
+    rewards:
+      affinity:
+        Maria: 20
+      flags:
+        maria_massage_received: true
+
+  # --- QUEST 4: Cena a Casa ---
+  maria_home_dinner:
+    meta:
+      title: "Home Cooking"
+      description: "Maria invites you to her home for a homemade dinner"
+      type: "side"
+      character: "Maria"
+      hidden: true
+    
+    activation:
+      type: "auto"
+      conditions:
+        - type: "affinity"
+          target: "Maria"
+          operator: "gte"
+          value: 50
+    
+    stages:
+      invitation:
+        title: "Dinner Invitation"
+        narrative_prompt: "Maria finds you after school. 'You remind me of my son... if I had one. Come to my place tonight. I'll cook something special. Just don't tell anyone.'"
+        on_enter:
+          - action: "set_location"
+            target: "Maria's Apartment"
+          - action: "set_outfit"
+            character: "Maria"
+            outfit: "night_robe"
+          - action: "set_time"
+            target: "Evening"
+        exit_conditions:
+          - type: "action"
+            pattern: "accept|dinner|home"
+        transitions:
+          - condition: "default"
+            target_stage: "the_dinner"
+      
+      the_dinner:
+        title: "Intimate Dinner"
+        narrative_prompt: "Maria's small apartment smells amazing. She's wearing an apron over a simple dress. 'Make yourself comfortable,' she says, pouring wine. 'You're the first student I've ever invited here...'"
+        on_enter:
+          - action: "set_emotional_state"
+            character: "Maria"
+            state: "maternal"
+        exit_conditions:
+          - type: "turn_count"
+            operator: "gte"
+            value: 3
+        transitions:
+          - condition: "default"
+            target: "_complete"
+    
+    rewards:
+      affinity:
+        Maria: 25
+      flags:
+        maria_home_visited: true
+
+  # --- QUEST 5: Curare il Malato ---
+  maria_sick_care:
+    meta:
+      title: "Nursing the Nurse"
+      description: "Maria is sick at home. You bring her homework and take care of her."
+      type: "side"
+      character: "Maria"
+      hidden: true
+    
+    activation:
+      type: "auto"
+      conditions:
+        - type: "affinity"
+          target: "Maria"
+          operator: "gte"
+          value: 30
+    
+    stages:
+      nursing:
+        title: "Bedside Care"
+        narrative_prompt: "Maria's apartment is quiet. She's in bed with fever, wearing only a thin nightgown. 'You shouldn't be here,' she weakly protests as you place a cold towel on her forehead. Her hand finds yours..."
+        on_enter:
+          - action: "set_location"
+            target: "Maria's Apartment"
+          - action: "set_outfit"
+            character: "Maria"
+            outfit: "night_robe"
+          - action: "set_emotional_state"
+            character: "Maria"
+            state: "maternal"
+        exit_conditions:
+          - type: "turn_count"
+            operator: "gte"
+            value: 3
+        transitions:
+          - condition: "default"
+            target: "_complete"
+    
+    rewards:
+      affinity:
+        Maria: 20
+      flags:
+        maria_cared_sick: true
+
+  # --- QUEST 6: Festival di Cultura ---
+  maria_culture_festival:
+    meta:
+      title: "Culture Festival"
+      description: "School festival. Maria runs a food stall. You help her."
+      type: "side"
+      character: "Maria"
+      hidden: true
+    
+    activation:
+      type: "scheduled"
+      day: 21
+      time: "Afternoon"
+    
+    stages:
+      stall:
+        title: "Food Stall Romance"
+        narrative_prompt: "Maria's food stall is busy. She wears a traditional apron, flour on her cheeks. 'You really came,' she smiles, surprised. The festival lights reflect in her eyes. 'Help me serve? We'll be partners for the day.'"
+        on_enter:
+          - action: "set_location"
+            target: "School Festival"
+          - action: "set_outfit"
+            character: "Maria"
+            outfit: "apron"
+        exit_conditions:
+          - type: "turn_count"
+            operator: "gte"
+            value: 3
+        transitions:
+          - condition: "default"
+            target: "_complete"
+    
+    rewards:
+      affinity:
+        Maria: 18
+
+# ============================================================
+# MILESTONES - Maria
+# ============================================================
+milestones:
+  - id: "maria_gossip"
+    name: "The Gossip"
+    condition:
+      affinity: 15
+    icon: "☕"
+  
+  - id: "maria_friend"
+    name: "Her Confidant"
+    condition:
+      affinity: 40
+      flag: "maria_helped_carry"
+    icon: "🤝"
+  
+  - id: "maria_trust"
+    name: "Her Sanctuary"
+    condition:
+      affinity: 70
+      flag: "maria_home_visited"
+    icon: "🏠"
+  
+  - id: "maria_lover"
+    name: "The School's Shadow"
+    condition:
+      affinity: 100
+      flag: "maria_confessed_lonely"
+    icon: "🔥"

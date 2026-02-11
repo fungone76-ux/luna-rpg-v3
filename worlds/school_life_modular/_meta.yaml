@@ -123,6 +123,57 @@ player_character:
     approach_style: "strategico - osserva prima, agisci dopo"
 
 # ============================================================
+# 3. GLOBAL QUESTS
+# ============================================================
+quests:
+  
+  # --- QUEST: Primo Giorno ---
+  first_day:
+    meta:
+      title: "First Day of School"
+      description: "Your first day at Da Vinci High"
+      type: "main"
+      character: null
+      required: true
+      priority: 100
+    
+    activation:
+      type: "auto"
+      conditions: []
+    
+    stages:
+      arrival:
+        title: "The School Gates"
+        narrative_prompt: "You arrive at Da Vinci High School. Luna, the Vice Principal, notices you."
+        on_enter:
+          - action: "set_location"
+            target: "School Entrance Gate"
+        exit_conditions:
+          - type: "turn_count"
+            operator: "gte"
+            value: 1
+        transitions:
+          - condition: "default"
+            target_stage: "orientation"
+      
+      orientation:
+        title: "Getting Oriented"
+        narrative_prompt: "Luna shows you around the school. You meet other students."
+        exit_conditions:
+          - type: "turn_count"
+            operator: "gte"
+            value: 3
+        transitions:
+          - condition: "default"
+            target: "_complete"
+    
+    rewards:
+      affinity:
+        Luna: 5
+      flags:
+        first_day_completed: true
+
+# ============================================================
 # 6. ENDGAME
 # ============================================================
 endgame:

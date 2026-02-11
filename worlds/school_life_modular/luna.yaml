@@ -186,5 +186,409 @@ companion:
       attraction: 0
       fear: 0
 
-  quests: []
-  milestones: []
+# ============================================================
+# QUESTS - Luna
+# ============================================================
+quests:
+  
+  # --- QUEST 1: Visita Medica ---
+  medical_checkup:
+    meta:
+      title: "The Medical Checkup"
+      description: "Luna asks you to stay after class for a 'special examination'"
+      type: "side"
+      character: "Luna"
+      hidden: true
+    
+    activation:
+      type: "auto"
+      conditions:
+        - type: "affinity"
+          target: "Luna"
+          operator: "gte"
+          value: 25
+    
+    stages:
+      invitation:
+        title: "The Invitation"
+        narrative_prompt: "Luna asks you to visit the nurse office after hours..."
+        on_enter:
+          - action: "set_flag"
+            key: "luna_medical_invited"
+            value: true
+        exit_conditions:
+          - type: "location"
+            operator: "eq"
+            value: "Nurse Office"
+        transitions:
+          - condition: "condition_0"
+            target_stage: "examination"
+      
+      examination:
+        title: "The Examination"
+        narrative_prompt: "The private examination begins. Luna's professional demeanor cracks..."
+        on_enter:
+          - action: "set_emotional_state"
+            character: "Luna"
+            state: "flustered"
+        exit_conditions:
+          - type: "turn_count"
+            operator: "gte"
+            value: 3
+        transitions:
+          - condition: "default"
+            target: "_complete"
+    
+    rewards:
+      affinity:
+        Luna: 15
+      flags:
+        medical_quest_done: true
+      unlock_quests:
+        - "luna_office_secret"
+
+  # --- QUEST 2: Supplenza in Palestra ---
+  luna_gym_class:
+    meta:
+      title: "Substitute Gym Teacher"
+      description: "Luna substitutes for the gym teacher. You're the only one who stayed for extra practice."
+      type: "side"
+      character: "Luna"
+      hidden: true
+    
+    activation:
+      type: "auto"
+      conditions:
+        - type: "affinity"
+          target: "Luna"
+          operator: "gte"
+          value: 30
+        - type: "time"
+          operator: "eq"
+          value: "Afternoon"
+    
+    stages:
+      gym_practice:
+        title: "After School Practice"
+        narrative_prompt: "The gym is empty except for you. Luna arrives in a tracksuit, hair tied back, looking different from her usual formal self..."
+        on_enter:
+          - action: "set_location"
+            target: "Gym"
+          - action: "set_outfit"
+            character: "Luna"
+            outfit: "gym_teacher"
+        exit_conditions:
+          - type: "turn_count"
+            operator: "gte"
+            value: 2
+        transitions:
+          - condition: "default"
+            target: "_complete"
+    
+    rewards:
+      affinity:
+        Luna: 12
+      flags:
+        luna_gym_seen: true
+
+  # --- QUEST 3: Esame Orale ---
+  luna_oral_exam:
+    meta:
+      title: "The Oral Examination"
+      description: "Luna calls you for a private oral exam. The classroom is empty."
+      type: "side"
+      character: "Luna"
+      hidden: true
+    
+    activation:
+      type: "auto"
+      conditions:
+        - type: "affinity"
+          target: "Luna"
+          operator: "gte"
+          value: 40
+        - type: "flag"
+          key: "luna_gym_seen"
+          value: true
+    
+    stages:
+      the_exam:
+        title: "Private Testing"
+        narrative_prompt: "Classroom 3B is empty. Luna sits on her desk, legs crossed, holding your file. 'Close the door. This examination is just for you...'"
+        on_enter:
+          - action: "set_location"
+            target: "Classroom 3B"
+          - action: "set_emotional_state"
+            character: "Luna"
+            state: "after_class"
+        exit_conditions:
+          - type: "turn_count"
+            operator: "gte"
+            value: 3
+        transitions:
+          - condition: "default"
+            target: "_complete"
+    
+    rewards:
+      affinity:
+        Luna: 20
+      unlock_outfits:
+        - "private_tutoring"
+
+  # --- QUEST 4: Incidente con il Gesso ---
+  luna_chalk_accident:
+    meta:
+      title: "The Chalk Incident"
+      description: "You 'accidentally' drop chalk. Luna bends to pick it up..."
+      type: "side"
+      character: "Luna"
+      hidden: true
+    
+    activation:
+      type: "auto"
+      conditions:
+        - type: "affinity"
+          target: "Luna"
+          operator: "gte"
+          value: 20
+        - type: "location"
+          operator: "eq"
+          value: "Classroom 3B"
+    
+    stages:
+      the_incident:
+        title: "Bending Over"
+        narrative_prompt: "During Luna's lesson, you 'accidentally' drop your pen near her feet. Luna sighs and bends down to pick it up. Her tight skirt rides up, giving you a view you shouldn't have..."
+        on_enter:
+          - action: "set_emotional_state"
+            character: "Luna"
+            state: "flustered"
+        exit_conditions:
+          - type: "turn_count"
+            operator: "gte"
+            value: 1
+        transitions:
+          - condition: "default"
+            target: "_complete"
+    
+    rewards:
+      affinity:
+        Luna: 8
+      flags:
+        luna_chalk_seen: true
+
+  # --- QUEST 5: Cinema Notturno ---
+  luna_movie_night:
+    meta:
+      title: "After Hours Cinema"
+      description: "Luna invites you to a private movie screening after school"
+      type: "side"
+      character: "Luna"
+      hidden: true
+    
+    activation:
+      type: "auto"
+      conditions:
+        - type: "affinity"
+          target: "Luna"
+          operator: "gte"
+          value: 55
+        - type: "time"
+          operator: "eq"
+          value: "Evening"
+    
+    stages:
+      invitation:
+        title: "Private Screening"
+        narrative_prompt: "Luna approaches you after class. 'The school has an old cinema room. I have the keys. Care to join me for a private screening? Just you and me...'"
+        on_enter:
+          - action: "set_location"
+            target: "School Cinema"
+          - action: "set_outfit"
+            character: "Luna"
+            outfit: "casual_teacher"
+        exit_conditions:
+          - type: "action"
+            pattern: "accept|join|yes"
+        transitions:
+          - condition: "default"
+            target_stage: "the_movie"
+      
+      the_movie:
+        title: "In the Dark"
+        narrative_prompt: "The cinema is dark, only the screen flickering. Luna sits next to you, closer than necessary. During a romantic scene, her hand 'accidentally' brushes against yours..."
+        on_enter:
+          - action: "set_emotional_state"
+            character: "Luna"
+            state: "after_class"
+        exit_conditions:
+          - type: "turn_count"
+            operator: "gte"
+            value: 3
+        transitions:
+          - condition: "default"
+            target: "_complete"
+    
+    rewards:
+      affinity:
+        Luna: 30
+      unlock_outfits:
+        - "casual_teacher"
+
+  # --- QUEST 6: Bagno Sbagliato ---
+  luna_wrong_bathroom:
+    meta:
+      title: "Wrong Door Accident"
+      description: "You accidentally walk into the teacher's bathroom while Luna is inside"
+      type: "side"
+      character: "Luna"
+      hidden: true
+    
+    activation:
+      type: "auto"
+      conditions:
+        - type: "affinity"
+          target: "Luna"
+          operator: "gte"
+          value: 15
+    
+    stages:
+      accident:
+        title: "Embarrassing Encounter"
+        narrative_prompt: "You push the door thinking it's the student bathroom. Steam fills the room. Luna stands there in a towel, hair wet, eyes wide. 'GET OUT!' she screams, but her blush says something else..."
+        on_enter:
+          - action: "set_emotional_state"
+            character: "Luna"
+            state: "flustered"
+          - action: "set_flag"
+            key: "saw_luna_towel"
+            value: true
+        exit_conditions:
+          - type: "turn_count"
+            operator: "gte"
+            value: 2
+        transitions:
+          - condition: "default"
+            target: "_complete"
+    
+    rewards:
+      affinity:
+        Luna: 10
+
+  # --- QUEST 7: Confessione sul Tetto ---
+  luna_rooftop_confession:
+    meta:
+      title: "Rooftop Confession"
+      description: "You find Luna alone on the school rooftop at sunset"
+      type: "side"
+      character: "Luna"
+      hidden: true
+    
+    activation:
+      type: "auto"
+      conditions:
+        - type: "affinity"
+          target: "Luna"
+          operator: "gte"
+          value: 60
+        - type: "time"
+          operator: "eq"
+          value: "Evening"
+    
+    stages:
+      confession:
+        title: "Sunset Confession"
+        narrative_prompt: "The rooftop is empty. Luna stands by the fence, wind in her hair. 'I shouldn't feel this way,' she whispers without turning. 'You're my student. But when I'm with you... I forget I'm a teacher.'"
+        on_enter:
+          - action: "set_location"
+            target: "School Rooftop"
+          - action: "set_emotional_state"
+            character: "Luna"
+            state: "vulnerable"
+          - action: "set_flag"
+            key: "luna_confessed"
+            value: true
+        exit_conditions:
+          - type: "turn_count"
+            operator: "gte"
+            value: 3
+        transitions:
+          - condition: "default"
+            target: "_complete"
+    
+    rewards:
+      affinity:
+        Luna: 35
+
+  # --- QUEST 8: Notte in Classe ---
+  luna_classroom_night:
+    meta:
+      title: "Night in the Classroom"
+      description: "You fell asleep in class. Wake up to find Luna watching over you."
+      type: "side"
+      character: "Luna"
+      hidden: true
+    
+    activation:
+      type: "auto"
+      conditions:
+        - type: "affinity"
+          target: "Luna"
+          operator: "gte"
+          value: 45
+        - type: "time"
+          operator: "eq"
+          value: "Night"
+    
+    stages:
+      night_class:
+        title: "Sleeping Beauty"
+        narrative_prompt: "You wake up. The school is dark. Luna sits at her desk, watching you. 'You slept through the bell,' she says softly. 'I couldn't wake you. I... I didn't want to leave you alone in the dark.'"
+        on_enter:
+          - action: "set_location"
+            target: "Classroom 3B"
+          - action: "set_emotional_state"
+            character: "Luna"
+            state: "after_class"
+        exit_conditions:
+          - type: "turn_count"
+            operator: "gte"
+            value: 3
+        transitions:
+          - condition: "default"
+            target: "_complete"
+    
+    rewards:
+      affinity:
+        Luna: 25
+
+# ============================================================
+# MILESTONES - Luna
+# ============================================================
+milestones:
+  - id: "luna_attention"
+    name: "Her Attention"
+    condition:
+      affinity: 25
+    icon: "👁️"
+  
+  - id: "luna_trust"
+    name: "Her Trust"
+    condition:
+      affinity: 50
+      flag: "luna_shared_personal"
+    icon: "🔓"
+  
+  - id: "luna_heart"
+    name: "Her Heart"
+    condition:
+      affinity: 75
+      flag: "luna_confessed"
+    icon: "❤️"
+  
+  - id: "luna_conquered"
+    name: "The Forbidden Affair"
+    condition:
+      affinity: 100
+      flag: "luna_intimate_done"
+    icon: "🔥"

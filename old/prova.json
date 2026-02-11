@@ -1,7 +1,7 @@
 {
   "1": {
     "inputs": {
-      "image": "Luna_1770232193.png"
+      "image": "luna_20260131_183955.png"
     },
     "class_type": "LoadImage",
     "_meta": {
@@ -30,25 +30,25 @@
   },
   "4": {
     "inputs": {
-      "unet_name": "Model_Civitai_fp8.gguf"
+      "unet_name": "Wan2.2-I2V-A14B-HighNoise-Q5_K_M.gguf"
     },
     "class_type": "UnetLoaderGGUF",
     "_meta": {
-      "title": "4. MODELLO HIGH (Merged SVI)"
+      "title": "4. MODELLO HIGH (Rumore Alto)"
     }
   },
   "5": {
     "inputs": {
-      "unet_name": "Model_Civitai_fp8.gguf"
+      "unet_name": "Wan2.2-I2V-A14B-LowNoise-Q5_K_M.gguf"
     },
     "class_type": "UnetLoaderGGUF",
     "_meta": {
-      "title": "5. MODELLO LOW (Merged SVI)"
+      "title": "5. MODELLO LOW (Dettagli)"
     }
   },
   "6": {
     "inputs": {
-      "text": "a girl show feet",
+      "text": "A cinematic, high-detail shot of a beautiful woman in a classroom. She gracefully raises her right hand, running her fingers through her long, wavy hair to adjust it behind her ear. Realistic skin texture, soft natural lighting from a nearby window, subtle smile, flowing hair strands, 4k, highly detailed, fluid motion, masterpiece.\"",
       "clip": [
         "2",
         0
@@ -103,16 +103,16 @@
   "9": {
     "inputs": {
       "add_noise": "enable",
-      "noise_seed": 466251207428756,
+      "noise_seed": 961579836362688,
       "steps": 4,
-      "cfg": 1,
+      "cfg": 0.9,
       "sampler_name": "euler",
-      "scheduler": "simple",
+      "scheduler": "beta",
       "start_at_step": 0,
       "end_at_step": 1,
       "return_with_leftover_noise": "enable",
       "model": [
-        "4",
+        "22",
         0
       ],
       "positive": [
@@ -130,22 +130,22 @@
     },
     "class_type": "KSamplerAdvanced",
     "_meta": {
-      "title": "9. KSAMPLER HIGH (Step 0-1)"
+      "title": "9. KSAMPLER HIGH (Start)"
     }
   },
   "10": {
     "inputs": {
       "add_noise": "disable",
-      "noise_seed": 420426911769863,
+      "noise_seed": 123456789,
       "steps": 4,
-      "cfg": 1,
+      "cfg": 0.9,
       "sampler_name": "euler",
-      "scheduler": "simple",
+      "scheduler": "beta",
       "start_at_step": 1,
       "end_at_step": 4,
       "return_with_leftover_noise": "disable",
       "model": [
-        "5",
+        "21",
         0
       ],
       "positive": [
@@ -163,7 +163,7 @@
     },
     "class_type": "KSamplerAdvanced",
     "_meta": {
-      "title": "10. KSAMPLER LOW (Step 1-4)"
+      "title": "10. KSAMPLER LOW (End)"
     }
   },
   "11": {
@@ -184,15 +184,15 @@
   },
   "12": {
     "inputs": {
-      "frame_rate": 16,
+      "frame_rate": 11,
       "loop_count": 0,
       "filename_prefix": "Luna_Finale",
       "format": "video/h264-mp4",
       "pix_fmt": "yuv420p",
-      "crf": 20,
+      "crf": 19,
       "save_metadata": true,
       "trim_to_audio": false,
-      "pingpong": false,
+      "pingpong": true,
       "save_output": true,
       "images": [
         "11",
@@ -206,6 +206,34 @@
     "class_type": "VHS_VideoCombine",
     "_meta": {
       "title": "12. SALVATAGGIO VIDEO"
+    }
+  },
+  "21": {
+    "inputs": {
+      "lora_name": "Wan2.2-Lightning_I2V-A14B-4steps-lora_LOW_fp16.safetensors",
+      "strength_model": 1,
+      "model": [
+        "5",
+        0
+      ]
+    },
+    "class_type": "LoraLoaderModelOnly",
+    "_meta": {
+      "title": "Load LoRA"
+    }
+  },
+  "22": {
+    "inputs": {
+      "lora_name": "Wan2.2-Lightning_I2V-A14B-4steps-lora_HIGH_fp16.safetensors",
+      "strength_model": 1,
+      "model": [
+        "4",
+        0
+      ]
+    },
+    "class_type": "LoraLoaderModelOnly",
+    "_meta": {
+      "title": "Load LoRA"
     }
   }
 }

@@ -182,3 +182,474 @@ companion:
       competitions_won: 0
       photos_sent: 0
       times_skipped: 0
+
+# ============================================================
+# QUESTS - Stella
+# ============================================================
+quests:
+  
+  # --- QUEST 1: Tutoraggio Matematico ---
+  stella_tutoring:
+    meta:
+      title: "Math Crisis"
+      description: "Stella needs help with math homework"
+      type: "side"
+      character: "Stella"
+    
+    activation:
+      type: "auto"
+      conditions:
+        - type: "affinity"
+          target: "Stella"
+          operator: "gte"
+          value: 20
+    
+    stages:
+      the_ask:
+        title: "The Request"
+        description: "Stella reluctantly asks for help"
+        narrative_prompt: "Stella corners you in the hallway, looking uncharacteristically nervous..."
+        on_enter:
+          - action: "set_flag"
+            key: "stella_tutoring_started"
+            value: true
+        exit_conditions:
+          - type: "action"
+            pattern: "help|assist|tutor"
+        transitions:
+          - condition: "condition_0"
+            target_stage: "study_session"
+      
+      study_session:
+        title: "Study Session"
+        description: "Working together at the library"
+        narrative_prompt: "Stella actually focuses for once, and you discover she's smarter than she pretends..."
+        on_enter:
+          - action: "set_location"
+            target: "Library"
+        exit_conditions:
+          - type: "turn_count"
+            operator: "gte"
+            value: 2
+        transitions:
+          - condition: "default"
+            target: "_complete"
+    
+    rewards:
+      affinity:
+        Stella: 10
+      flags:
+        stella_tutoring_complete: true
+
+  # --- QUEST 2: Partita di Basket ---
+  stella_basketball:
+    meta:
+      title: "One-on-One Challenge"
+      description: "Stella challenges you to a basketball game after school"
+      type: "side"
+      character: "Stella"
+      hidden: true
+    
+    activation:
+      type: "auto"
+      conditions:
+        - type: "affinity"
+          target: "Stella"
+          operator: "gte"
+          value: 25
+        - type: "location"
+          operator: "eq"
+          value: "Gym"
+    
+    stages:
+      the_game:
+        title: "Basketball Court"
+        narrative_prompt: "Stella bounces the ball, smirking. 'Think you can beat me, transfer student? Loser buys winner lunch.' She's wearing shorts and a tank top, sweat already glistening..."
+        on_enter:
+          - action: "set_outfit"
+            character: "Stella"
+            outfit: "gym_teacher"
+        exit_conditions:
+          - type: "action"
+            pattern: "win|lose|play|score"
+        transitions:
+          - condition: "default"
+            target: "_complete"
+    
+    rewards:
+      affinity:
+        Stella: 15
+      flags:
+        stella_basketball_complete: true
+
+  # --- QUEST 3: Servizio Fotografico ---
+  stella_photoshoot:
+    meta:
+      title: "The Secret Photoshoot"
+      description: "Stella asks you to help with her social media photos"
+      type: "side"
+      character: "Stella"
+      hidden: true
+    
+    activation:
+      type: "auto"
+      conditions:
+        - type: "affinity"
+          target: "Stella"
+          operator: "gte"
+          value: 45
+        - type: "flag"
+          key: "stella_basketball_complete"
+          value: true
+    
+    stages:
+      photoshoot:
+        title: "Photo Session"
+        narrative_prompt: "Stella's bedroom. She's trying on different outfits for her social media. 'Be honest, which one looks better?' She holds up a tiny bikini and a short dress..."
+        on_enter:
+          - action: "set_location"
+            target: "Stella Bedroom"
+          - action: "set_outfit"
+            character: "Stella"
+            outfit: "swimsuit"
+        exit_conditions:
+          - type: "turn_count"
+            operator: "gte"
+            value: 3
+        transitions:
+          - condition: "default"
+            target: "_complete"
+    
+    rewards:
+      affinity:
+        Stella: 25
+      unlock_outfits:
+        - "pajamas"
+
+  # --- QUEST 4: Ballo Scolastico ---
+  stella_school_dance:
+    meta:
+      title: "The School Dance"
+      description: "The annual school dance. Stella needs a partner."
+      type: "side"
+      character: "Stella"
+      hidden: true
+    
+    activation:
+      type: "auto"
+      conditions:
+        - type: "affinity"
+          target: "Stella"
+          operator: "gte"
+          value: 35
+    
+    stages:
+      invitation:
+        title: "Will You Dance?"
+        narrative_prompt: "The gym is decorated with lights and balloons. Stella stands alone by the punch bowl, looking around nervously. She spots you and waves you over..."
+        on_enter:
+          - action: "set_location"
+            target: "Gym"
+          - action: "set_outfit"
+            character: "Stella"
+            outfit: "prom_dress"
+          - action: "set_time"
+            target: "Evening"
+        exit_conditions:
+          - type: "action"
+            pattern: "dance|ask|partner"
+        transitions:
+          - condition: "default"
+            target_stage: "the_dance"
+      
+      the_dance:
+        title: "Slow Dance"
+        narrative_prompt: "The lights dim. A slow song starts. Stella puts her arms around your neck, her body pressed close. 'Don't step on my feet,' she whispers, but she's smiling..."
+        on_enter:
+          - action: "set_emotional_state"
+            character: "Stella"
+            state: "clingy"
+        exit_conditions:
+          - type: "turn_count"
+            operator: "gte"
+            value: 2
+        transitions:
+          - condition: "default"
+            target: "_complete"
+    
+    rewards:
+      affinity:
+        Stella: 25
+      flags:
+        school_dance_partner: true
+
+  # --- QUEST 5: Shopping ---
+  stella_shopping:
+    meta:
+      title: "Personal Shopper"
+      description: "Stella drags you shopping to help her choose outfits"
+      type: "side"
+      character: "Stella"
+      hidden: true
+    
+    activation:
+      type: "auto"
+      conditions:
+        - type: "affinity"
+          target: "Stella"
+          operator: "gte"
+          value: 40
+    
+    stages:
+      the_mall:
+        title: "Dressing Room"
+        narrative_prompt: "Stella pulls you into a fancy boutique. 'I need a male opinion,' she says, pushing you into the dressing room area. She tries on different outfits while you wait outside... or do you peek?"
+        on_enter:
+          - action: "set_location"
+            target: "Shopping Mall"
+        exit_conditions:
+          - type: "turn_count"
+            operator: "gte"
+            value: 3
+        transitions:
+          - condition: "default"
+            target: "_complete"
+    
+    rewards:
+      affinity:
+        Stella: 15
+      flags:
+        stella_shopping_done: true
+
+  # --- QUEST 6: Studio Notturno ---
+  stella_library_night:
+    meta:
+      title: "Late Night Study"
+      description: "Studying alone with Stella in the library after hours"
+      type: "side"
+      character: "Stella"
+      hidden: true
+    
+    activation:
+      type: "auto"
+      conditions:
+        - type: "affinity"
+          target: "Stella"
+          operator: "gte"
+          value: 30
+        - type: "location"
+          operator: "eq"
+          value: "Library"
+        - type: "time"
+          operator: "eq"
+          value: "Evening"
+    
+    stages:
+      studying:
+        title: "Alone in the Library"
+        narrative_prompt: "The library is closing. It's just you and Stella. She sits across from you, kicking off her shoes under the table. Her foot 'accidentally' touches your leg..."
+        on_enter:
+          - action: "set_emotional_state"
+            character: "Stella"
+            state: "tsundere"
+        exit_conditions:
+          - type: "turn_count"
+            operator: "gte"
+            value: 2
+        transitions:
+          - condition: "default"
+            target: "_complete"
+    
+    rewards:
+      affinity:
+        Stella: 12
+
+  # --- QUEST 7: Ombrello Condiviso ---
+  stella_shared_umbrella:
+    meta:
+      title: "Under One Umbrella"
+      description: "It's raining. Stella forgot her umbrella. You offer to share yours."
+      type: "side"
+      character: "Stella"
+      hidden: true
+    
+    activation:
+      type: "auto"
+      conditions:
+        - type: "affinity"
+          target: "Stella"
+          operator: "gte"
+          value: 25
+        - type: "flag"
+          key: "rainstorm_active"
+          value: true
+    
+    stages:
+      walk_home:
+        title: "Rainy Walk"
+        narrative_prompt: "The umbrella is small. Stella presses against you to stay dry. Her uniform gets wet, becoming see-through. 'Don't look, pervert!' she says, but she doesn't move away..."
+        on_enter:
+          - action: "set_emotional_state"
+            character: "Stella"
+            state: "tsundere"
+        exit_conditions:
+          - type: "turn_count"
+            operator: "gte"
+            value: 2
+        transitions:
+          - condition: "default"
+            target: "_complete"
+    
+    rewards:
+      affinity:
+        Stella: 15
+
+  # --- QUEST 8: Caduta Sopra di Lei ---
+  stella_fall_on_her:
+    meta:
+      title: "Accidental Position"
+      description: "You trip and fall on top of Stella. Classic anime accident."
+      type: "side"
+      character: "Stella"
+      hidden: true
+    
+    activation:
+      type: "auto"
+      conditions:
+        - type: "affinity"
+          target: "Stella"
+          operator: "gte"
+          value: 20
+    
+    stages:
+      fall:
+        title: "Awkward Landing"
+        narrative_prompt: "You trip on the stairs. Stella tries to catch you but you both fall. You end up on top of her, hands in compromising places. Her face is red. 'G-GET OFF ME!' But she doesn't push you away immediately..."
+        on_enter:
+          - action: "set_emotional_state"
+            character: "Stella"
+            state: "tsundere"
+        exit_conditions:
+          - type: "turn_count"
+            operator: "gte"
+            value: 1
+        transitions:
+          - condition: "default"
+            target: "_complete"
+    
+    rewards:
+      affinity:
+        Stella: 10
+      flags:
+        fell_on_stella: true
+
+  # --- QUEST 9: Festival Sportivo ---
+  stella_sports_festival:
+    meta:
+      title: "Sports Festival"
+      description: "Annual school sports day. Stella is participating in the relay race."
+      type: "side"
+      character: "Stella"
+      hidden: true
+    
+    activation:
+      type: "scheduled"
+      day: 14
+      time: "Morning"
+    
+    stages:
+      race:
+        title: "Cheering Her On"
+        narrative_prompt: "The sports field is packed. Stella runs the relay, her gym uniform sticking to her sweaty body. She trips! You rush to help. She looks up at you from the ground, tears in her eyes... 'I... I wanted to win for you.'"
+        on_enter:
+          - action: "set_location"
+            target: "Sports Field"
+          - action: "set_outfit"
+            character: "Stella"
+            outfit: "gym_teacher"
+        exit_conditions:
+          - type: "turn_count"
+            operator: "gte"
+            value: 2
+        transitions:
+          - condition: "default"
+            target: "_complete"
+    
+    rewards:
+      affinity:
+        Stella: 20
+      flags:
+        sports_festival_cheered: true
+
+  # --- QUEST 10: Nascondino ---
+  stella_hide_seek:
+    meta:
+      title: "Hide and Seek"
+      description: "Playing hide and seek during a blackout at school. You find Stella hiding in a closet."
+      type: "side"
+      character: "Stella"
+      hidden: true
+    
+    activation:
+      type: "auto"
+      conditions:
+        - type: "affinity"
+          target: "Stella"
+          operator: "gte"
+          value: 28
+        - type: "flag"
+          key: "blackout_active"
+          value: true
+    
+    stages:
+      closet:
+        title: "Dark Closet"
+        narrative_prompt: "You open the supply closet in the dark. Stella is there, pressed against the wall. 'Shh!' she whispers, pulling you inside. The door closes. It's pitch black. You're pressed together in the small space..."
+        on_enter:
+          - action: "set_location"
+            target: "Storage Room"
+          - action: "set_emotional_state"
+            character: "Stella"
+            state: "flustered"
+        exit_conditions:
+          - type: "turn_count"
+            operator: "gte"
+            value: 2
+        transitions:
+          - condition: "default"
+            target: "_complete"
+    
+    rewards:
+      affinity:
+        Stella: 22
+
+# ============================================================
+# MILESTONES - Stella
+# ============================================================
+milestones:
+  - id: "stella_notice"
+    name: "She Notices You"
+    condition:
+      affinity: 20
+    icon: "👀"
+  
+  - id: "stella_friend"
+    name: "Her Friend"
+    condition:
+      affinity: 50
+      flag: "stella_tutoring_complete"
+    icon: "🤝"
+  
+  - id: "stella_crush"
+    name: "Her Crush"
+    condition:
+      affinity: 75
+      flag: "school_dance_partner"
+    icon: "💕"
+  
+  - id: "stella_lover"
+    name: "The Tsundere's Heart"
+    condition:
+      affinity: 100
+      flag: "stella_confessed_love"
+    icon: "🔥"
