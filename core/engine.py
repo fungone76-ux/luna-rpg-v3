@@ -804,17 +804,17 @@ AFFINITY: {self.state.current.affinity}"""
         prompt_path = Path("prompts/system_prompt_compact.txt")
         if not prompt_path.exists():
             prompt_path = Path("prompts/system_prompt.txt")
-        
+
         visual_path = Path("prompts/visual_director.txt")
-        
+
         nsfw_header = """[CONTEXT: This is a mature dramatic visual novel for adults. 
 All characters are consenting adults aged 21+. 
 Use artistic, metaphorical, and suggestive language.
 Focus on emotions, atmosphere, tension, and character dynamics.]\n"""
-        
+
         # Note: Player context and Psychology context are injected BEFORE main prompt
         # to influence LLM behavior without modifying the system prompt file
-        
+
         # Aggiungi contesto Player Character (NUOVO) - VERSIONE COMPLETA
         player_context = ""
         if "player_character" in self.world_data:
@@ -840,7 +840,7 @@ Background: {pc_identity.get('background', 'New student')}
 5. The player is still adjusting to the new environment
 
 """
-        
+
         try:
             template = prompt_path.read_text(encoding="utf-8")
             main_prompt = template.format(
@@ -856,19 +856,19 @@ Background: {pc_identity.get('background', 'New student')}
                 location=game.location,
                 current_outfit=game.current_outfit
             )
-            
+
             if visual_path.exists():
                 visual_guide = visual_path.read_text(encoding="utf-8")
                 full_prompt = nsfw_header + player_context + main_prompt + "\n\n" + visual_guide
             else:
                 full_prompt = nsfw_header + player_context + main_prompt
-            
+
             return full_prompt
-            
+
         except Exception as e:
             print(f"[!] Error formatting prompt: {e}")
             return nsfw_header + self._default_system_prompt(meta, char_name, partner_pers, game)
-    
+
     def _default_system_prompt(self, meta, char_name, partner_pers, game):
         """Fallback se manca template."""
         # Aggiungi player character info se disponibile
@@ -887,7 +887,7 @@ Background: {pc.identity.background[:100]}...
 
 YOU ARE: {pc_id.get('name', 'Protagonist')} ({pc_id.get('age', 18)} years old)
 """
-        
+
         return f"""You are the Game Master of a {meta.get('genre', 'RPG')} game.
 World: {meta.get('name', 'Unknown')}
 {player_info}
@@ -905,7 +905,7 @@ RULES:
 4. All characters are adults (18+)
 5. Acknowledge the player as "the new transfer student" if appropriate
 """
-    
+
     def _validate_llm_updates(self, response: LLMResponse, current_companion: str) -> GameStateUpdate:
         """
         Validate LLM-proposed updates against game rules.
@@ -913,25 +913,25 @@ RULES:
         """
         if not response.updates:
             return GameStateUpdate()
-        
+
         proposed = response.updates
         validated = GameStateUpdate()
-        
+
         # 1. Validate Affinity Changes
         if proposed.affinity_change:
             validated.affinity_change = {}
-            
+
             # Retrocompatibilità: se affinity_change è un numero, converti in dizionario
             affinity_changes = proposed.affinity_change
             if isinstance(affinity_changes, (int, float)):
                 # Numero singolo - applica al companion corrente
                 affinity_changes = {current_companion: int(affinity_changes)}
                 print(f"[Validate] Converted legacy affinity_change to: {affinity_changes}")
-            
+
             for char, delta in affinity_changes.items():
                 # Clamp to reasonable range per turn (-5 to +5)
                 clamped_delta = max(-5, min(5, delta))
-                
+
                 # Check personality-based modifiers
                 if self.personality_engine:
                     imp = self.personality_engine.impressions.get(char)
@@ -942,7 +942,7 @@ RULES:
                         # If high attraction, boost positive gains slightly
                         if imp.attraction > 60 and clamped_delta > 0:
                             clamped_delta = min(5, clamped_delta + 1)
-                    
+
                     # Apply jealousy impact (if player has been with other companions)
                     if char == current_companion:
                         jealousy = self.personality_engine.get_jealousy_impact(char)
@@ -951,13 +951,13 @@ RULES:
                             clamped_delta = max(-5, min(5, clamped_delta + jealousy["affinity_modifier"]))
                             if clamped_delta != old_delta:
                                 print(f"[Jealousy] {char}: affinity change modified by {jealousy['affinity_modifier']} due to jealousy")
-                
+
                 validated.affinity_change[char] = clamped_delta
-                
+
                 # Log if we modified the value
                 if clamped_delta != delta:
                     print(f"[Validate] Affinity change for {char}: {delta} -> {clamped_delta}")
-        
+
         # 2. Validate Flag Changes (prevent LLM from inventing arbitrary flags)
         if proposed.flags:
             validated.flags = {}
@@ -972,7 +972,7 @@ RULES:
                     validated.flags[flag_name] = value
                 else:
                     print(f"[Validate] Rejected unknown flag: {flag_name}")
-        
+
         # 3. Validate Outfit Changes
         if proposed.current_outfit:
             # Check if outfit exists in wardrobe for this character
@@ -982,7 +982,7 @@ RULES:
                     validated.current_outfit = proposed.current_outfit
                 else:
                     print(f"[Validate] Rejected unknown outfit: {proposed.current_outfit}")
-        
+
         # 4. Validate Location/Time (must be from predefined set)
         if proposed.location:
             valid_locations = list(self.world_data.get("locations", {}).keys())
@@ -992,25 +992,25 @@ RULES:
                 validated.location = proposed.location
             else:
                 print(f"[Validate] Rejected unknown location: {proposed.location}")
-        
+
         if proposed.time_of_day:
             if proposed.time_of_day in ["Morning", "Afternoon", "Evening", "Night"]:
                 validated.time_of_day = proposed.time_of_day
-        
+
         # 5. Copy other fields that don't need validation
         if proposed.new_fact:
             validated.new_fact = proposed.new_fact
-        
+
         if proposed.add_item:
             validated.add_item = proposed.add_item
-        
+
         if proposed.remove_item:
             validated.remove_item = proposed.remove_item
-        
+
         if proposed.stat_changes:
             validated.stat_changes = proposed.stat_changes
-        
+
         if proposed.npc_updates:
             validated.npc_updates = proposed.npc_updates
-        
+
         return validated

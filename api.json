@@ -1,7 +1,7 @@
 {
   "1": {
     "inputs": {
-      "image": "Luna_1770232193.png"
+      "image": "Luna_1770748550.png"
     },
     "class_type": "LoadImage",
     "_meta": {
@@ -34,7 +34,7 @@
     },
     "class_type": "UnetLoaderGGUF",
     "_meta": {
-      "title": "4. MODELLO HIGH (Merged SVI)"
+      "title": "4. MODELLO HIGH (Rumore Alto)"
     }
   },
   "5": {
@@ -43,12 +43,12 @@
     },
     "class_type": "UnetLoaderGGUF",
     "_meta": {
-      "title": "5. MODELLO LOW (Merged SVI)"
+      "title": "5. MODELLO LOW (Dettagli) - Stesso file per entrambi"
     }
   },
   "6": {
     "inputs": {
-      "text": "a girl show feet",
+      "text": "A cinematic, high-detail shot of a beautiful woman in a classroom. She gracefully raises her right hand, running her fingers through her long, wavy hair to adjust it behind her ear. Realistic skin texture, soft natural lighting from a nearby window, subtle smile, flowing hair strands, 4k, highly detailed, fluid motion, masterpiece.",
       "clip": [
         "2",
         0
@@ -74,8 +74,8 @@
   },
   "8": {
     "inputs": {
-      "width": 768,
-      "height": 1280,
+      "width": 720,
+      "height": 928,
       "length": 81,
       "batch_size": 1,
       "positive": [
@@ -103,11 +103,11 @@
   "9": {
     "inputs": {
       "add_noise": "enable",
-      "noise_seed": 466251207428756,
+      "noise_seed": 622408418896246,
       "steps": 4,
-      "cfg": 1,
+      "cfg": 0.9,
       "sampler_name": "euler",
-      "scheduler": "simple",
+      "scheduler": "beta",
       "start_at_step": 0,
       "end_at_step": 1,
       "return_with_leftover_noise": "enable",
@@ -130,17 +130,17 @@
     },
     "class_type": "KSamplerAdvanced",
     "_meta": {
-      "title": "9. KSAMPLER HIGH (Step 0-1)"
+      "title": "9. KSAMPLER HIGH (Start)"
     }
   },
   "10": {
     "inputs": {
       "add_noise": "disable",
-      "noise_seed": 420426911769863,
+      "noise_seed": 834531845479795,
       "steps": 4,
-      "cfg": 1,
+      "cfg": 0.9,
       "sampler_name": "euler",
-      "scheduler": "simple",
+      "scheduler": "beta",
       "start_at_step": 1,
       "end_at_step": 4,
       "return_with_leftover_noise": "disable",
@@ -163,7 +163,7 @@
     },
     "class_type": "KSamplerAdvanced",
     "_meta": {
-      "title": "10. KSAMPLER LOW (Step 1-4)"
+      "title": "10. KSAMPLER LOW (End)"
     }
   },
   "11": {
@@ -189,10 +189,10 @@
       "filename_prefix": "Luna_Finale",
       "format": "video/h264-mp4",
       "pix_fmt": "yuv420p",
-      "crf": 20,
+      "crf": 19,
       "save_metadata": true,
       "trim_to_audio": false,
-      "pingpong": false,
+      "pingpong": true,
       "save_output": true,
       "images": [
         "11",

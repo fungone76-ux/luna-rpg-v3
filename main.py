@@ -12,7 +12,7 @@ from ui.main_window import MainWindow
 
 
 class SessionLogger:
-    """Logger completo per sessione di gioco - UNICO FILE."""
+    """Lkogger completo per sessione di gioco - UNICO FILE."""
     
     def __init__(self, filepath):
         self.filepath = filepath
