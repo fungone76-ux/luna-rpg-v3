@@ -15,7 +15,9 @@ import asyncio
 import gc
 from pathlib import Path
 from typing import Optional, Dict
-
+import random
+seed_casuale = random.randint(1, 999999999999999)
+print(f"  [Patch] Seed applicato: {seed_casuale}")
 import aiohttp
 import aiofiles
 
@@ -308,6 +310,11 @@ Generate detailed temporal descriptions focusing on motion, camera work, and phy
                 if "end_image" in workflow["8"]["inputs"]:
                     del workflow["8"]["inputs"]["end_image"]
                 print("  [Patch] Risoluzione: 512x768")
+
+                if "9" in workflow:
+                    workflow["9"]["inputs"]["noise_seed"] = seed_casuale
+                if "10" in workflow:
+                    workflow["10"]["inputs"]["noise_seed"] = seed_casuale
             
             # Patch filename_prefix per tracciamento su RunPod
             if "12" in workflow:

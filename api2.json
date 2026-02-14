@@ -1,0 +1,142 @@
+{
+  "1": {
+    "inputs": {
+      "image": "Luna_1770748550.png"
+    },
+    "class_type": "LoadImage",
+    "_meta": { "title": "1. FOTO DI LUNA" }
+  },
+  "2": {
+    "inputs": {
+      "clip_name": "umt5_xxl_fp8_e4m3fn_scaled.safetensors",
+      "type": "wan",
+      "device": "default"
+    },
+    "class_type": "CLIPLoader",
+    "_meta": { "title": "2. CLIP (Testo)" }
+  },
+  "3": {
+    "inputs": {
+      "vae_name": "wan_2.1_vae.safetensors"
+    },
+    "class_type": "VAELoader",
+    "_meta": { "title": "3. VAE (Colori)" }
+  },
+  "4": {
+    "inputs": {
+      "unet_name": "wan2.1_i2v_fp8.gguf"
+    },
+    "class_type": "UnetLoaderGGUF",
+    "_meta": { "title": "4. MODELLO HIGH (Q4)" }
+  },
+  "5": {
+    "inputs": {
+      "unet_name": "wan2.1_i2v_fp8.gguf"
+    },
+    "class_type": "UnetLoaderGGUF",
+    "_meta": { "title": "5. MODELLO LOW (Q4)" }
+  },
+  "6": {
+    "inputs": {
+      "text": "A cinematic shot of a beautiful woman, high detail, masterpiece.",
+      "clip": ["2", 0]
+    },
+    "class_type": "CLIPTextEncode",
+    "_meta": { "title": "6. PROMPT POSITIVO" }
+  },
+  "7": {
+    "inputs": {
+      "text": "low quality, blurry, deformed",
+      "clip": ["2", 0]
+    },
+    "class_type": "CLIPTextEncode",
+    "_meta": { "title": "7. PROMPT NEGATIVO" }
+  },
+  "13": {
+    "inputs": {
+      "clip_name": "clip_vision_h.safetensors"
+    },
+    "class_type": "CLIPVisionLoader",
+    "_meta": { "title": "13. CARICATORE VISIONE" }
+  },
+  "8": {
+    "inputs": {
+      "width": 720,
+      "height": 928,
+      "length": 81,
+      "batch_size": 1,
+      "positive": ["6", 0],
+      "negative": ["7", 0],
+      "vae": ["3", 0],
+      "start_image": ["1", 0],
+      "clip_vision_start": ["13", 0],
+      "clip_vision_end": ["13", 0],
+      "clip_vision": ["13", 0]
+    },
+    "class_type": "WanFirstLastFrameToVideo",
+    "_meta": { "title": "8. LOGICA VIDEO" }
+  },
+  "9": {
+    "inputs": {
+      "add_noise": "enable",
+      "noise_seed": 622408418896246,
+      "steps": 4,
+      "cfg": 0.9,
+      "sampler_name": "euler",
+      "scheduler": "beta",
+      "start_at_step": 0,
+      "end_at_step": 1,
+      "return_with_leftover_noise": "enable",
+      "model": ["4", 0],
+      "positive": ["8", 0],
+      "negative": ["8", 1],
+      "latent_image": ["8", 2]
+    },
+    "class_type": "KSamplerAdvanced",
+    "_meta": { "title": "9. KSAMPLER HIGH" }
+  },
+  "10": {
+    "inputs": {
+      "add_noise": "disable",
+      "noise_seed": 622408418896246,
+      "steps": 4,
+      "cfg": 0.9,
+      "sampler_name": "euler",
+      "scheduler": "beta",
+      "start_at_step": 1,
+      "end_at_step": 4,
+      "return_with_leftover_noise": "disable",
+      "model": ["5", 0],
+      "positive": ["8", 0],
+      "negative": ["8", 1],
+      "latent_image": ["9", 0]
+    },
+    "class_type": "KSamplerAdvanced",
+    "_meta": { "title": "10. KSAMPLER LOW" }
+  },
+  "11": {
+    "inputs": {
+      "samples": ["10", 0],
+      "vae": ["3", 0]
+    },
+    "class_type": "VAEDecode",
+    "_meta": { "title": "11. DECODIFICA" }
+  },
+  "12": {
+    "inputs": {
+      "images": ["11", 0],
+      "vae": ["3", 0],
+      "frame_rate": 16,
+      "loop_count": 0,
+      "filename_prefix": "Luna_Finale",
+      "format": "video/h264-mp4",
+      "pix_fmt": "yuv420p",
+      "crf": 19,
+      "save_metadata": true,
+      "pingpong": true,
+      "save_output": true
+    },
+    "class_type": "VHS_VideoCombine",
+    "_meta": { "title": "12. SALVATAGGIO VIDEO" }
+  }
+}
