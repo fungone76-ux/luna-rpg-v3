@@ -11,6 +11,69 @@ from qasync import QEventLoop
 from ui.main_window import MainWindow
 
 
+class DialogPromptLogger:
+    """Logger dedicato per dialogo e prompt di generazione.
+    
+    Crea un file txt pulito con:
+    - Solo il dialogo tra giocatore e personaggio
+    - Prompt positivi inviati a ComfyUI (immagini)
+    - Prompt positivi inviati a ComfyUI (video)
+    """
+    
+    def __init__(self, filepath: Path):
+        self.filepath = filepath
+        self.file = open(filepath, 'w', encoding='utf-8')
+        self.turn_count = 0
+        self._write_header()
+    
+    def _write_header(self):
+        """Scrive header del file."""
+        self.file.write(f"{'=' * 80}\n")
+        self.file.write(f"LUNA RPG v3 - DIALOGO E PROMPT DI GENERAZIONE\n")
+        self.file.write(f"Sessione: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}\n")
+        self.file.write(f"{'=' * 80}\n\n")
+        self.file.flush()
+    
+    def log_turn_start(self, turn_number: int):
+        """Inizia un nuovo turno."""
+        self.turn_count = turn_number
+        self.file.write(f"\n{'=' * 80}\n")
+        self.file.write(f"TURNO #{turn_number}\n")
+        self.file.write(f"{'=' * 80}\n\n")
+        self.file.flush()
+    
+    def log_player_message(self, text: str):
+        """Logga messaggio del giocatore."""
+        self.file.write(f"GIOCATORE:\n")
+        self.file.write(f"{text}\n\n")
+        self.file.flush()
+    
+    def log_character_response(self, character: str, text: str):
+        """Logga risposta del personaggio."""
+        self.file.write(f"{character.upper()}:\n")
+        self.file.write(f"{text}\n\n")
+        self.file.flush()
+    
+    def log_image_prompt(self, character: str, prompt: str):
+        """Logga prompt immagine inviato a ComfyUI."""
+        self.file.write(f"[PROMPT IMMAGINE - {character}]\n")
+        self.file.write(f"{prompt}\n\n")
+        self.file.flush()
+    
+    def log_video_prompt(self, character: str, prompt: str):
+        """Logga prompt video inviato a ComfyUI."""
+        self.file.write(f"[PROMPT VIDEO - {character}]\n")
+        self.file.write(f"{prompt}\n\n")
+        self.file.flush()
+    
+    def close(self):
+        """Chiude il file."""
+        self.file.write(f"\n{'=' * 80}\n")
+        self.file.write(f"FINE SESSIONE - Totale Turni: {self.turn_count}\n")
+        self.file.write(f"{'=' * 80}\n")
+        self.file.close()
+
+
 class SessionLogger:
     """Lkogger completo per sessione di gioco - UNICO FILE."""
     
@@ -132,13 +195,14 @@ class StderrLogger:
         self.terminal.flush()
 
 
-# Global logger
+# Global loggers
 session_logger = None
+dialog_logger = None
 
 
 def setup_logging():
     """Configura il logging su un unico file."""
-    global session_logger
+    global session_logger, dialog_logger
     
     # Crea cartella logs
     logs_dir = Path('logs')
@@ -148,8 +212,12 @@ def setup_logging():
     timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
     log_file = logs_dir / f'session_{timestamp}.txt'
     
-    # Crea logger
+    # Crea logger sessione completo
     session_logger = SessionLogger(log_file)
+    
+    # Crea logger dialogo/prompt dedicato
+    dialog_log_file = logs_dir / f'dialog_prompts_{timestamp}.txt'
+    dialog_logger = DialogPromptLogger(dialog_log_file)
     
     # Redirigi stdout e stderr
     sys.stdout = session_logger
@@ -167,14 +235,15 @@ def setup_logging():
     
     # Log iniziale
     session_logger.log_event("SYSTEM", f"Logging avviato: {log_file}")
+    session_logger.log_event("SYSTEM", f"Dialog/Prompt logging: {dialog_log_file}")
     
-    return session_logger
+    return session_logger, dialog_logger
 
 
 def main():
     """Main entry point."""
     # Setup logging
-    logger = setup_logging()
+    logger, dialog_log = setup_logging()
     
     try:
         # Crea applicazione Qt
@@ -186,9 +255,10 @@ def main():
         loop = QEventLoop(app)
         asyncio.set_event_loop(loop)
         
-        # Crea finestra con riferimento al logger
+        # Crea finestra con riferimento ai logger
         window = MainWindow()
-        window.session_logger = logger  # Passa logger alla UI
+        window.session_logger = logger  # Passa logger sessione alla UI
+        window.dialog_logger = dialog_log  # Passa logger dialogo/prompt
         window.show()
         
         # Esegui
@@ -203,9 +273,11 @@ def main():
     finally:
         if session_logger:
             session_logger.close()
+        if dialog_logger:
+            dialog_logger.close()
             # Ripristina stdout/stderr
-            sys.stdout = session_logger.terminal_out
-            sys.stderr = session_logger.terminal_err
+            sys.stdout = session_logger.terminal_out if session_logger else sys.__stdout__
+            sys.stderr = session_logger.terminal_err if session_logger else sys.__stderr__
     
     sys.exit(0)
 

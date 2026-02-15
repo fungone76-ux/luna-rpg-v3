@@ -361,6 +361,18 @@ class LLMClient:
                             print(f"   API Key used: {self.moonshot_api_key[:10]}... (length: {len(self.moonshot_api_key)})")
                             # Non retry su 401, passa subito a fallback
                             break
+                        elif e.response.status_code == 429:
+                            print(f"[!] Moonshot Rate Limited (429)")
+                            # Dopo troppi 429, passa direttamente a Gemini
+                            if attempt == 1 and model == models_to_try[-1]:
+                                print("[->] Too many rate limits, switching to Gemini...")
+                                if self.gemini_client:
+                                    return await self._generate_gemini(
+                                        user_input, system_instruction, history, memory_context
+                                    )
+                            import asyncio
+                            await asyncio.sleep(5)  # Aumentato a 5 secondi
+                            continue
                         print(f"[!] Moonshot HTTP Error {e.response.status_code}: {e}")
                     except Exception as e:
                         print(f"[!] Moonshot Error: {e}")
@@ -610,26 +622,117 @@ class LLMClient:
     def _parse_json_fallback(self, raw_text: str, result: LLMResponse):
         """Fallback per formato JSON vecchio."""
         try:
-            # Cerca JSON
-            json_match = re.search(r"```json\s*(.*?)```", raw_text, re.DOTALL | re.IGNORECASE)
-            if not json_match:
-                json_match = re.search(r"(\{[\s\S]*?\"visual_en\"[\s\S]*?\})", raw_text, re.DOTALL)
-
-            if json_match:
-                json_str = json_match.group(1).strip()
-                json_str = json_str.replace("'", '"')
+            # Cerca JSON - prima prova con markdown code block (più robusto)
+            json_str = None
+            
+            # Metodo 1: Cerca ```json ... ``` (robusto per multi-line)
+            if "```json" in raw_text.lower():
+                # Trova l'inizio del code block
+                start_idx = raw_text.lower().find("```json")
+                # Trova la fine del code block (``` dopo l'inizio)
+                end_marker = "```"
+                end_idx = raw_text.find(end_marker, start_idx + 7)  # +7 per saltare ```json
+                if end_idx != -1:
+                    json_str = raw_text[start_idx + 7:end_idx].strip()
+            
+            # Metodo 2: Se non trovato, cerca JSON puro
+            if not json_str:
+                start = raw_text.find('{')
+                end = raw_text.rfind('}')
+                if start != -1 and end != -1 and end > start:
+                    json_str = raw_text[start:end+1].strip()
+            
+            if json_str:
+                # NON sostituire singoli apici - potrebbero essere nel testo italiano
+                # json_str = json_str.replace("'", '"')  # RIMOSSO - causa problemi
+                
+                # Solo rimuovi trailing commas
                 json_str = re.sub(r",(\s*[}\]])", r"\1", json_str)
-
-                data = json.loads(json_str)
+                
+                # Parse JSON
+                try:
+                    data = json.loads(json_str)
+                except json.JSONDecodeError as e:
+                    # Se fallisce, prova a fixare caratteri problematici comuni
+                    print(f"  [!] JSON parse error: {e}")
+                    print(f"  [!] Attempting to fix JSON...")
+                    # Prova a parsare linea per linea per trovare l'errore
+                    try:
+                        data = json.loads(json_str, strict=False)
+                    except:
+                        # Ultimo tentativo: estrai campi manualmente con regex
+                        print(f"  [!] Falling back to regex extraction...")
+                        data = self._extract_json_fields_manually(json_str)
+                
+                result.text = data.get("text", result.text)
                 result.visual_en = data.get("visual_en", "")
                 result.tags_en = data.get("tags_en", [])
                 result.body_focus = data.get("body_focus")
                 result.approach_used = data.get("approach_used", "standard")
-                updates = data.get("updates", {})
-                result.updates = GameStateUpdate(**updates) if updates else GameStateUpdate()
-                print("[OK] JSON fallback parsed")
+                
+                # Build GameStateUpdate from flat JSON fields
+                updates = {}
+                if "time_of_day" in data and data["time_of_day"]:
+                    updates["time_of_day"] = data["time_of_day"]
+                if "location" in data and data["location"]:
+                    updates["location"] = data["location"]
+                if "current_outfit" in data and data["current_outfit"]:
+                    updates["current_outfit"] = data["current_outfit"]
+                if "affinity_change" in data:
+                    updates["affinity_change"] = data["affinity_change"]
+                
+                if updates:
+                    result.updates = GameStateUpdate(**updates)
+                else:
+                    result.updates = GameStateUpdate()
+                
+                print(f"[OK] JSON parsed: text={len(result.text)} chars, visual={len(result.visual_en)} chars")
         except Exception as e:
             print(f"[!] JSON fallback failed: {e}")
+
+    def _extract_json_fields_manually(self, json_str: str) -> dict:
+        """Estrae campi JSON manualmente quando il parser fallisce."""
+        data = {}
+        
+        # Estrai text (contenuto tra "text": e la prossima chiave)
+        text_match = re.search(r'"text"\s*:\s*"(.*?)"\s*,\s*"visual_en"', json_str, re.DOTALL)
+        if text_match:
+            data["text"] = text_match.group(1).replace('\\n', '\n').replace('\\"', '"')
+        
+        # Estrai visual_en
+        visual_match = re.search(r'"visual_en"\s*:\s*"(.*?)"\s*,\s*"tags_en"', json_str, re.DOTALL)
+        if visual_match:
+            data["visual_en"] = visual_match.group(1)
+        
+        # Estrai tags_en (array)
+        tags_match = re.search(r'"tags_en"\s*:\s*\[(.*?)\]', json_str, re.DOTALL)
+        if tags_match:
+            tags_str = tags_match.group(1)
+            # Estrai stringhe tra virgolette
+            data["tags_en"] = re.findall(r'"([^"]*)"', tags_str)
+        else:
+            data["tags_en"] = []
+        
+        # Estrai altri campi semplici
+        for field in ["body_focus", "approach_used", "time_of_day", "location", "current_outfit"]:
+            match = re.search(rf'"{field}"\s*:\s*"([^"]*)"', json_str)
+            if match:
+                data[field] = match.group(1)
+        
+        # Estrai affinity_change (può essere numero o oggetto)
+        aff_match = re.search(r'"affinity_change"\s*:\s*(\{.*?\}|\d+)', json_str, re.DOTALL)
+        if aff_match:
+            aff_str = aff_match.group(1)
+            if aff_str.isdigit():
+                data["affinity_change"] = int(aff_str)
+            else:
+                # Prova a parsare come dict
+                try:
+                    data["affinity_change"] = json.loads(aff_str)
+                except:
+                    pass
+        
+        return data
 
 
     async def _generate_moonshot_json(
@@ -852,6 +955,18 @@ Example response:
                         elif e.response.status_code == 401:
                             print(f"[ERR] Moonshot 401 Unauthorized")
                             break
+                        elif e.response.status_code == 429:
+                            print(f"[!] Moonshot Rate Limited (429)")
+                            # Dopo troppi 429, passa a Gemini
+                            if attempt == 1 and model == models_to_try[-1]:
+                                print("[->] Too many rate limits, switching to Gemini...")
+                                if self.gemini_client:
+                                    return await self._generate_gemini(
+                                        user_input, system_instruction, history, memory_context
+                                    )
+                            import asyncio
+                            await asyncio.sleep(5)  # Aumentato a 5s
+                            continue
                         else:
                             print(f"[!] Moonshot HTTP Error {e.response.status_code}: {e}")
                     except Exception as e:

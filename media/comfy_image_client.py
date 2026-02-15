@@ -67,7 +67,7 @@ class ComfyImageClient:
             # 3. Seleziona LoRA corretto (nomi esatti dal server) + pesi originali
             lora_config = {
                 "Luna": ("stsDebbie-10e.safetensors", 0.7),
-                "Stella": ("alice_milf_catchers_lora.safetensors", 0.7),
+                "Stella": ("alice_mitchell_milf_catchers_lora.safetensors", 0.7),
                 "Maria": ("stsSmith-10e.safetensors", 0.65)
             }
             lora_name, lora_strength = lora_config.get(character_name, ("stsDebbie-10e.safetensors", 0.7))

@@ -81,8 +81,8 @@ class VideoClient:
             return True
     
     async def _cleanup_comfy_vram(self, comfy_url: str):
-        """Forza pulizia VRAM su ComfyUI dopo video - SUPER AGGRESSIVA."""
-        print("  [Cleanup] Scarico modelli ComfyUI (super aggressive)...")
+        """Pulizia VRAM su ComfyUI dopo video - VERSIONE VELOCE."""
+        print("  [Cleanup] Scarico modelli ComfyUI...")
         session = None
         try:
             session = aiohttp.ClientSession()
@@ -92,9 +92,9 @@ class VideoClient:
                 await session.post(f"{comfy_url}/interrupt", timeout=5)
             except:
                 pass
-            await asyncio.sleep(2)
+            await asyncio.sleep(1)  # Ridotto da 2s a 1s
             
-            # 2. PULIZIA SUPER AGGRESSIVA: 5 chiamate /free con attese crescenti
+            # 2. PULIZIA: 5 chiamate /free con attese brevi
             for attempt in range(5):
                 try:
                     resp = await session.post(
@@ -103,21 +103,18 @@ class VideoClient:
                         timeout=30
                     )
                     if resp.status == 200:
-                        print(f"  [Cleanup] /free OK (tentativo {attempt+1}/5)")
-                    else:
-                        print(f"  [Cleanup] /free status {resp.status} (tentativo {attempt+1}/5)")
+                        print(f"  [Cleanup] /free OK ({attempt+1}/5)")
                     await resp.release()
                 except Exception as e:
                     print(f"  [Cleanup] /free error: {e}")
                 
-                # Attesa crescente tra le chiamate
-                wait_time = 3 + (attempt * 2)  # 3s, 5s, 7s, 9s, 11s
-                print(f"  [Cleanup] Attesa {wait_time}s...")
-                await asyncio.sleep(wait_time)
+                # Attese brevi tra le chiamate: 1s, 2s, 2s, 3s, 3s
+                wait_times = [1, 2, 2, 3, 3]
+                await asyncio.sleep(wait_times[attempt])
             
-            # 3. Attesa finale molto lunga per scarico VRAM completo
+            # 3. Attesa finale per scarico VRAM
             print("  [Cleanup] Attesa finale scarico VRAM...")
-            await asyncio.sleep(20)
+            await asyncio.sleep(5)  # Ridotto da 20s a 5s
                 
         except Exception as e:
             print(f"  [Cleanup] Error: {e}")
@@ -125,7 +122,7 @@ class VideoClient:
             if session:
                 await session.close()
         
-        print("  [Cleanup] VRAM liberata (tentativo)")
+        print("  [Cleanup] VRAM liberata")
     
     # ========================================================================
     # TEMPORAL PROMPT
@@ -242,12 +239,14 @@ Generate detailed temporal descriptions focusing on motion, camera work, and phy
         self, llm_client, image_path: Path, context: str,
         character: str, location: str, action: str = "posing",
         save_dir: Optional[Path] = None, motion_speed: int = 6,
-        user_action: Optional[str] = None
+        user_action: Optional[str] = None,
+        dialog_logger = None
     ) -> Optional[Path]:
         """Genera video con Do Not Disturb mode.
         
         Args:
             user_action: Optional custom action description in Italian from user
+            dialog_logger: Optional logger per dialogo e prompt
         """
         
         if not self.settings.video_available:
@@ -279,18 +278,22 @@ Generate detailed temporal descriptions focusing on motion, camera work, and phy
             final_prompt = self._add_boosters(temporal, motion_speed)
             print(f"[Video] Prompt: {final_prompt[:100]}...")
             
+            # Log prompt video nel dialog_logger
+            if dialog_logger:
+                dialog_logger.log_video_prompt(character, final_prompt)
+            
             # 2. Carica e patch workflow
             print("[Video] Loading workflow...")
             async with aiofiles.open(self.workflow_path, "r", encoding="utf-8") as f:
                 workflow = json.loads(await f.read())
             
-            # Trova e patch positive prompt (nodo 6) PRIMA di rimuovere _meta
+            # Trova e patch positive prompt (nodo 5) PRIMA di rimuovere _meta
             for nid, node in workflow.items():
                 if node.get("class_type") == "CLIPTextEncode":
                     title = node.get("_meta", {}).get("title", "")
-                    if "POSITIVO" in title.upper() or nid == "6":
+                    if "POSITIVO" in title.upper() or nid == "5":
                         node["inputs"]["text"] = final_prompt
-                        print(f"  [Patch] Prompt positivo ({nid})")
+                        print(f"  [Patch] Prompt positivo ({nid}): {final_prompt[:80]}...")
                         break
             
             # Rimuovi _meta da tutti i nodi (causa errori 400)
@@ -298,27 +301,27 @@ Generate detailed temporal descriptions focusing on motion, camera work, and phy
                 if "_meta" in workflow[node_id]:
                     del workflow[node_id]["_meta"]
             
-            # Patch workflow
-            if "1" in workflow:
-                workflow["1"]["inputs"]["image"] = image_path.name
+            # Patch workflow - Nodo 6 è LoadImage per Wan2.1
+            if "6" in workflow:
+                workflow["6"]["inputs"]["image"] = image_path.name
+                print(f"  [Patch] Immagine input: {image_path.name}")
             
-            # Patch risoluzione e batch
-            if "8" in workflow:
-                workflow["8"]["inputs"]["width"] = 512
-                workflow["8"]["inputs"]["height"] = 768
-                workflow["8"]["inputs"]["batch_size"] = 1
-                if "end_image" in workflow["8"]["inputs"]:
-                    del workflow["8"]["inputs"]["end_image"]
-                print("  [Patch] Risoluzione: 512x768")
+            # Patch risoluzione e batch (nodo 7 = WanImageToVideo)
+            if "7" in workflow:
+                workflow["7"]["inputs"]["width"] = 512
+                workflow["7"]["inputs"]["height"] = 768
+                workflow["7"]["inputs"]["length"] = 81
+                workflow["7"]["inputs"]["batch_size"] = 1
+                print("  [Patch] Risoluzione video: 512x768x81frames")
 
-                if "9" in workflow:
-                    workflow["9"]["inputs"]["noise_seed"] = seed_casuale
-                if "10" in workflow:
-                    workflow["10"]["inputs"]["noise_seed"] = seed_casuale
+            # Patch seed per KSampler (nodo 8)
+            if "8" in workflow:
+                workflow["8"]["inputs"]["seed"] = seed_casuale
+                print(f"  [Patch] Seed: {seed_casuale}")
             
-            # Patch filename_prefix per tracciamento su RunPod
-            if "12" in workflow:
-                workflow["12"]["inputs"]["filename_prefix"] = f"{character}_Video"
+            # Patch filename_prefix per tracciamento su RunPod (nodo 10 = VHS_VideoCombine)
+            if "10" in workflow:
+                workflow["10"]["inputs"]["filename_prefix"] = f"{character}_Video"
                 print(f"  [Patch] Filename prefix: {character}_Video")
             
             # NOTA: FreeMemory node non e' standard, lo gestiamo via API dopo
@@ -334,8 +337,8 @@ Generate detailed temporal descriptions focusing on motion, camera work, and phy
                         if r.status == 200:
                             result = await r.json()
                             uploaded_name = result.get("name", image_path.name)
-                            if "1" in workflow:
-                                workflow["1"]["inputs"]["image"] = uploaded_name
+                            if "6" in workflow:
+                                workflow["6"]["inputs"]["image"] = uploaded_name
                             print(f"  [Upload] OK: {uploaded_name}")
             except Exception as e:
                 print(f"  [Upload] Warning: {e}")
@@ -360,16 +363,16 @@ Generate detailed temporal descriptions focusing on motion, camera work, and phy
                         return None
                     print(f"  [Queue] ID: {prompt_id}")
             
-            # 5. DO NOT DISTURB - 2 minuti e 10 secondi (sufficiente per 512x768)
-            print("[Video] Generating... (2m 10s)")
-            total_seconds = 130  # 2 minuti e 10 secondi
-            update_interval = 5.417  # ~130s / 24 updates
+            # 5. DO NOT DISTURB - ~2m 45s (basato su test: video pronto in ~155s)
+            print("[Video] Generating... (~2m 45s)")
+            total_seconds = 165  # 2 minuti 45 secondi (margine sui 155s reali)
+            update_interval = 7  # ~165s / 24 updates
             for i in range(24):
                 await asyncio.sleep(update_interval)
                 elapsed = int((i + 1) * update_interval)
                 mins = elapsed // 60
                 secs = elapsed % 60
-                self._update_progress(f"Generazione... {mins}m {secs}s / 2m10s")
+                self._update_progress(f"Generazione... {mins}m {secs}s / 2m 45s")
             
             print("[Video] Checking result...")
             
@@ -380,29 +383,27 @@ Generate detailed temporal descriptions focusing on motion, camera work, and phy
                 print(f"[Video] Salvato: {video_path}")
                 self._open_video(video_path)
             
-            # PULIZIA MEMORIA AGGRESSIVA (variabili grandi)
+            # PULIZIA MEMORIA (variabili grandi)
             print("[Video] Pulizia memoria temporanea...")
             import gc
             del workflow, final_prompt, temporal
             for _ in range(3):
                 gc.collect()
-                await asyncio.sleep(1)
             print("  [RAM] Buffer temporanei liberati")
             
-            # PULIZIA VRAM AGGRESSIVA
+            # PULIZIA VRAM ComfyUI
             print("[Video] Pulizia VRAM ComfyUI...")
             await self._cleanup_comfy_vram(comfy_url)
             
-            # Pausa critica per scarico VRAM + RAM
-            print("  [VRAM] Attesa scarico finale (30s)...")
-            await asyncio.sleep(30)  # Aumentato a 30s per sicurezza
+            # Pausa per scarico VRAM + RAM
+            print("  [VRAM] Attesa scarico finale (10s)...")
+            await asyncio.sleep(10)  # Ridotto da 30s a 10s
             
             # Cleanup aggiuntivo della RAM di sistema
-            import gc
             gc.collect()
             print("  [RAM] Garbage collection eseguito")
             
-            await asyncio.sleep(15)  # Altra pausa per sistema
+            await asyncio.sleep(5)  # Altra pausa - ridotta da 15s a 5s
             print("  [VRAM/RAM] Pronto")
             
             return video_path
@@ -426,8 +427,8 @@ Generate detailed temporal descriptions focusing on motion, camera work, and phy
         try:
             session = aiohttp.ClientSession()
             
-            # Polling per max 60 secondi (il video dovrebbe essere già pronto)
-            max_attempts = 12
+            # Polling per max 120 secondi (il video potrebbe richiedere tempo)
+            max_attempts = 24
             attempt_delay = 5  # 5 secondi tra tentativi
             
             for attempt in range(max_attempts):

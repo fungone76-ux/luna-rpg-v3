@@ -68,6 +68,10 @@ class GameEngine:
         self.quest_engine: Optional[QuestEngine] = None
         self.personality_engine: Optional[PersonalityEngine] = None
         self.time_manager: Optional[TimeManager] = None
+        
+        # Logger per dialogo e prompt (iniettato da main_window)
+        self.dialog_logger = None
+        self._current_turn = 0
     
     async def _manage_vram(self, action: str) -> bool:
         """Gestisce la staffetta VRAM tra SD e ComfyUI."""
@@ -210,6 +214,13 @@ class GameEngine:
         
         current_char = self.state.current.companion_name
         current_outfit = self.state.current.current_outfit
+        self._current_turn += 1
+        
+        # Log inizio turno nel dialog_logger
+        if self.dialog_logger and user_input:
+            self.dialog_logger.log_turn_start(self._current_turn)
+            self.dialog_logger.log_player_message(user_input)
+        
         print(f"[O] DEBUG: Active companion={current_char}, outfit={current_outfit}")
         
         # ========== STEP 0: PERSONALITY ANALYSIS ==========
@@ -300,6 +311,10 @@ class GameEngine:
             db, "model", response.text, self.state.current.turn_count,
             response.visual_en, response.tags_en
         )
+        
+        # Log risposta personaggio nel dialog_logger
+        if self.dialog_logger:
+            self.dialog_logger.log_character_response(current_char, response.text)
         
         # ========== STEP 6: VALIDATE AND APPLY STATE CHANGES ==========
         # LLM suggests changes; Python validates and applies correct values
@@ -679,9 +694,14 @@ Describe the scene and suggest changes; the system will validate and apply them.
                 body_focus=body_focus
             )
         
+        # Log prompt immagine
+        char_name = self.state.current.companion_name if self.state else "Luna"
+        if self.dialog_logger:
+            self.dialog_logger.log_image_prompt(char_name, prompt_result.positive)
+        
         return await self.image_gen.generate(
             prompt_result, 
-            character_name=self.state.current.companion_name if self.state else "Luna"
+            character_name=char_name
         )
     
     async def generate_video(self, image_path, action="posing", narrative_context="", 
@@ -712,7 +732,8 @@ AFFINITY: {self.state.current.affinity}"""
             action=action,
             save_dir=save_dir,
             motion_speed=self.settings.video_motion_speed,
-            user_action=user_action
+            user_action=user_action,
+            dialog_logger=self.dialog_logger
         )
     
     def _build_dialogue_tone(self, char_name: str, affinity: int) -> str:

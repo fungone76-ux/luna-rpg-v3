@@ -794,6 +794,10 @@ class MainWindow(QMainWindow):
                     self.close()
                     return
 
+            # Passa dialog_logger all'engine se disponibile
+            if hasattr(self, 'dialog_logger') and self.dialog_logger:
+                self.engine.dialog_logger = self.dialog_logger
+            
             # Setup UI Quest System
             self._setup_quest_ui()
 

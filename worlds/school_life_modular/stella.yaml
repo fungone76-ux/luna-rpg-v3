@@ -6,7 +6,7 @@
 companion:
   name: "Stella"
   default_outfit: "uniform_mod"
-  base_prompt: "score_9, score_8_up, masterpiece, NSFW, photorealistic, 1girl, alice_milf_catchers, massive breasts, cleavage, blonde hair, beautiful blue eyes, shapely legs, hourglass figure, skinny body, narrow waist, wide hips, <lora:alice_milf_catchers_lora:0.7> <lora:Expressive_H:0.2>"
+  base_prompt: "score_9, score_8_up, masterpiece, NSFW, photorealistic, 1girl, alice_milf_catchers, massive breasts, cleavage, blonde hair, beautiful blue eyes, shapely legs, hourglass figure, skinny body, narrow waist, wide hips, <lora:alice_mitchell_milf_catchers_lora.safetensors:0.7> <lora:Expressive_H:0.2>"
   
   wardrobe:
     uniform_mod:

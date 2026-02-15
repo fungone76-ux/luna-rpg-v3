@@ -1,7 +1,7 @@
 {
   "1": {
     "inputs": {
-      "ckpt_name": "Modello_Scaricato.safetensors"
+      "ckpt_name": "cyberrealisticPony_v7.safetensors"
     },
     "class_type": "CheckpointLoaderSimple",
     "_meta": {
