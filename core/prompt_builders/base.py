@@ -102,35 +102,55 @@ def get_outfit_for_character(
 ) -> str:
     """Costruisce la stringa outfit per un personaggio.
     
-    Usa 'sd_prompt' se disponibile (per ComfyUI), altrimenti 'description'.
+    Supporta:
+    1. Key YAML (es. "executive_suit") -> Restituisce sd_prompt dal YAML (PRIORITÀ)
+    2. Descrizione Libera (es. "wearing red latex suit") -> Restituisce la stringa diretta (FALLBACK CREATIVO)
     """
     wardrobe = world_wardrobe.get(char_name, {})
-    outfit_data = wardrobe.get(current_outfit_key, current_outfit_key)
-    
+
     # DEBUG: Log per verificare cosa arriva
     print(f"    [DEBUG Outfit] char={char_name}, key={current_outfit_key}")
-    print(f"    [DEBUG Outfit] type={type(outfit_data)}, data={str(outfit_data)[:100]}...")
-    
-    # Se è un dizionario (nuovo formato YAML), prendi sd_prompt o description
-    if isinstance(outfit_data, dict):
-        # Priorità: sd_prompt (per ComfyUI) > description (fallback)
-        outfit_desc = outfit_data.get("sd_prompt") or outfit_data.get("description") or current_outfit_key
-        print(f"    [DEBUG Outfit] Using DICT format, sd_prompt={outfit_data.get('sd_prompt') is not None}")
+
+    outfit_desc = ""
+
+    # 1. Cerca nel YAML se la chiave esiste
+    if wardrobe and current_outfit_key in wardrobe:
+        outfit_data = wardrobe[current_outfit_key]
+        if isinstance(outfit_data, dict):
+            # Priorità: sd_prompt > description
+            outfit_desc = outfit_data.get("sd_prompt") or outfit_data.get("description") or ""
+            print(f"    [DEBUG Outfit] Found in YAML (Dict). Using configured prompt.")
+        else:
+            # Legacy string format
+            outfit_desc = str(outfit_data)
+            print(f"    [DEBUG Outfit] Found in YAML (String).")
+
+    # 2. Se NON esiste nel YAML, assumiamo sia una descrizione libera dell'LLM!
     else:
-        # Formato vecchio/stringa
-        outfit_desc = outfit_data
-        print(f"    [DEBUG Outfit] Using STRING format (legacy)")
-    
-    # Pulizia
-    clean_desc = str(outfit_desc).lower().replace("wearing ", "")
-    clean_desc = clean_desc.replace("(", "").replace(")", "").strip()
-    
-    # Fix scarpe
-    clean_desc = remove_conflicting_footwear(clean_desc, visual_context)
-    
-    if "nude" in clean_desc or "naked" in clean_desc:
-        return f"(nude:1.3), {clean_desc}"
-    return f"(wearing {clean_desc}:1.3)"
+        outfit_desc = current_outfit_key
+        print(f"    [DEBUG Outfit] NOT in YAML. Using raw LLM description (Creative Mode).")
+
+    # Pulizia base
+    clean_desc = str(outfit_desc).strip()
+
+    # Se la descrizione è vuota o 'default', non aggiungere nulla
+    if not clean_desc or clean_desc.lower() in ["default", "none", ""]:
+        return ""
+
+    # Formattazione per ComfyUI/SD
+    # Se l'LLM ha già scritto "wearing...", non raddoppiarlo
+    if clean_desc.lower().startswith("wearing "):
+        final_prompt = f"({clean_desc}:1.3)"
+    elif "nude" in clean_desc.lower() or "naked" in clean_desc.lower():
+        final_prompt = f"(nude:1.3), {clean_desc}"
+    else:
+        # Aggiungi "wearing" se manca
+        final_prompt = f"(wearing {clean_desc}:1.3)"
+
+    # Fix scarpe se richiesto dal contesto visivo (es. "barefoot")
+    final_prompt = remove_conflicting_footwear(final_prompt, visual_context)
+
+    return final_prompt
 
 
 def clean_base_prompt(base: str, is_multi: bool = False) -> str:

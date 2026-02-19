@@ -5,6 +5,13 @@
 **PHOTOGRAPHIC LOGIC:**
 SD generates a SINGLE STATIC IMAGE, not a video. Think "frozen photograph".
 
+**WARDROBE & OUTFIT RULES (NEW):**
+1. **DEFAULT:** Use standard outfits from the provided list (e.g. `executive_suit`, `gym_wear`) for consistency.
+2. **CREATIVE FREEDOM:** If the user asks for a specific outfit NOT in the list (e.g. "Wear a red latex catsuit"), or if the scene demands a unique look, **YOU CAN INVENT IT.**
+   - Instead of an ID, output a full visual description string in `current_outfit`.
+   - Example JSON: `{"current_outfit": "wearing red latex catsuit, shiny, tight fit, zipper"}`
+   - The system will detect this is not a standard ID and use your description directly.
+
 **NPC/GENERIC CHARACTERS (CRITICAL):**
 When the scene features a character who is NOT Luna/Stella/Maria (e.g., a librarian, nurse, student, teacher, stranger):
 1. **DESCRIBE THEIR APPEARANCE**: You MUST describe their look in visual_en: hair color/style, age, body type, outfit, distinguishing features

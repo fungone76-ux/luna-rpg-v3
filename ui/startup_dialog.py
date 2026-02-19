@@ -20,15 +20,16 @@ from config.settings import get_settings, load_user_prefs, save_user_prefs
 class LoadGameDialog(QDialog):
     """Dialog per caricare una partita esistente dal database."""
     
-    def __init__(self, parent=None):
+    def __init__(self, parent=None, saves=None):
         super().__init__(parent)
         self.setWindowTitle("Load Game - Select Save")
         self.resize(500, 400)
         
         self.selected_session_id: Optional[int] = None
+        self._saves = saves or []
         
         self._setup_ui()
-        self._load_saves()
+        self._populate_saves()
     
     def _setup_ui(self):
         layout = QVBoxLayout(self)
@@ -80,50 +81,23 @@ class LoadGameDialog(QDialog):
         
         layout.addLayout(btn_layout)
     
-    def _load_saves(self):
-        """Carica lista salvataggi dal database."""
-        try:
-            # Esegui query async in modo sincrono per semplicità
-            import asyncio
-            
-            async def fetch_saves():
-                async with db_manager.get_session() as db:
-                    result = await db.execute(
-                        db_manager.async_session.select(SessionModel)
-                        .order_by(SessionModel.updated_at.desc())
-                    )
-                    return result.scalars().all()
-            
-            # Usa run_sync o crea un nuovo loop
-            try:
-                loop = asyncio.get_event_loop()
-                saves = loop.run_until_complete(self._fetch_saves_async())
-            except RuntimeError:
-                # No running loop
-                saves = asyncio.run(self._fetch_saves_async())
-            
-            self.list_saves.clear()
-            for save in saves:
-                item_text = f"{save.companion_name} - {save.world_id} - Turn {save.turn_count}"
-                item = QListWidgetItem(item_text)
-                item.setData(Qt.UserRole, save.id)
-                item.setToolTip(f"Created: {save.created_at}\nUpdated: {save.updated_at}")
-                self.list_saves.addItem(item)
-            
-            if not saves:
-                self.list_saves.addItem("Nessuna partita salvata")
-                
-        except Exception as e:
-            self.list_saves.addItem(f"Error loading saves: {e}")
-    
-    async def _fetch_saves_async(self) -> List[SessionModel]:
-        """Fetch saves from database."""
-        async with db_manager.get_session() as db:
-            from sqlalchemy import select, desc
-            result = await db.execute(
-                select(SessionModel).order_by(desc(SessionModel.updated_at))
-            )
-            return list(result.scalars().all())
+    def _populate_saves(self):
+        """Popola la lista con i salvataggi forniti."""
+        self.list_saves.clear()
+        
+        print(f"[LoadGameDialog] Received {len(self._saves)} saves")
+        
+        if not self._saves:
+            self.list_saves.addItem("Nessuna partita salvata")
+            return
+        
+        for save in self._saves:
+            print(f"  Populating: ID={save.id}, {save.companion_name}, turn={save.turn_count}")
+            item_text = f"{save.companion_name} - {save.world_id} - Turn {save.turn_count}"
+            item = QListWidgetItem(item_text)
+            item.setData(Qt.UserRole, save.id)
+            item.setToolTip(f"Created: {save.created_at}\nUpdated: {save.updated_at}")
+            self.list_saves.addItem(item)
     
     def accept(self):
         """Conferma selezione."""

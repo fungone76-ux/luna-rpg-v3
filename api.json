@@ -182,7 +182,7 @@
   "16": {
     "inputs": {
       "lora_name": "wan2.2/lightx2v-i2v/Wan_2_2_I2V_A14B_HIGH_lightx2v_MoE_distill_lora_rank_64_bf16.safetensors",
-      "strength_model": 1,
+      "strength_model": 0.7,
       "model": [
         "1",
         0
@@ -196,7 +196,7 @@
   "17": {
     "inputs": {
       "lora_name": "wan2.2/lightx2v-i2v/Wan2.2-Lightning_I2V-A14B-4steps-lora_LOW_fp16.safetensors",
-      "strength_model": 1,
+      "strength_model": 0.7,
       "model": [
         "1",
         0

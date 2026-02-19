@@ -386,18 +386,23 @@ class GameEngine:
             
             # Aggiorna stato NPC basato su schedule
             for npc_name, npc_data in self.world_data.get("companions", {}).items():
-                if npc_name != self.state.current.companion_name:
-                    schedule = self.time_manager.get_npc_schedule(npc_data)
-                    if schedule:
-                        if npc_name not in self.state.current.npc_states:
-                            self.state.current.npc_states[npc_name] = {}
-                        
-                        # Aggiorna location e outfit se definiti nello schedule
-                        if "location" in schedule:
-                            self.state.current.npc_states[npc_name]["location"] = schedule["location"]
-                        if "outfit" in schedule:
-                            self.state.current.npc_states[npc_name]["current_outfit"] = schedule["outfit"]
-            
+                # CRITICAL FIX: Mai aggiornare lo schedule del companion ATTIVO!
+                # Questo previene che Luna venga teletrasportata in palestra mentre le parli.
+                if npc_name == self.state.current.companion_name:
+                    continue
+
+                # Per gli altri NPC, applica lo schedule normalmente
+                schedule = self.time_manager.get_npc_schedule(npc_data)
+                if schedule:
+                    if npc_name not in self.state.current.npc_states:
+                        self.state.current.npc_states[npc_name] = {}
+
+                    # Aggiorna location e outfit se definiti nello schedule
+                    if "location" in schedule:
+                        self.state.current.npc_states[npc_name]["location"] = schedule["location"]
+                    if "outfit" in schedule:
+                        self.state.current.npc_states[npc_name]["current_outfit"] = schedule["outfit"]
+
             # Salva NPC states aggiornati nel DB
             await self.state.save_session_state(
                 db,
@@ -544,7 +549,11 @@ class GameEngine:
             "is_multi_character": len(mentioned_chars) >= 2
         }
     
-    def _build_system_prompt_with_analysis(self, analysis: Dict[str, Any], quest_updates: QuestUpdateResult = None) -> str:
+    def _build_system_prompt_with_analysis(
+        self, 
+        analysis: Dict[str, Any], 
+        quest_updates: QuestUpdateResult = None
+    ) -> str:
         """Build system prompt with personality, quest context, and scene analysis.
         All context provided to LLM is in English for optimal model performance.
         """
@@ -627,6 +636,8 @@ class GameEngine:
         state_context = f"""
 === CURRENT GAME STATE (READ ONLY) ===
 Turn: {game.turn_count}
+Character: {game.companion_name}
+Current Outfit: {game.current_outfit}
 Current Affinity with {game.companion_name}: {game.affinity.get(game.companion_name, 0)}/100
 Location: {game.location}
 Time: {game.time_of_day}
@@ -634,6 +645,7 @@ Active Flags: {list(game.flags.keys())[:5]}...
 
 CRITICAL: You CANNOT directly modify these numbers. 
 Describe the scene and suggest changes; the system will validate and apply them.
+IMPORTANT: The character is currently wearing '{game.current_outfit}'. Describe this outfit accurately in your visual description.
 """
         context_sections.append(state_context)
         
@@ -814,6 +826,33 @@ AFFINITY: {self.state.current.affinity}"""
         # NUOVO: Genera dialogue_tone dinamico basato sull'affinità
         dialogue_tone = self._build_dialogue_tone(char_name, current_aff)
         
+        # NUOVO: Lista outfit disponibili per il personaggio corrente
+        char_config = self.world_data.get("companions", {}).get(char_name)
+        available_outfits = []
+        if char_config and hasattr(char_config, 'wardrobe'):
+            available_outfits = list(char_config.wardrobe.keys())
+        
+        outfit_instructions = f"""
+=== OUTFIT SYSTEM FOR {char_name} ===
+Current Outfit: {game.current_outfit}
+Available Outfits: {', '.join(available_outfits)}
+
+WHEN THE PLAYER ASKS TO CHANGE OUTFIT (e.g., "wear pajamas", "put on swimsuit"):
+1. Narrate the character changing clothes naturally
+2. Describe the NEW outfit in visual_en field
+3. Set the new outfit key in "current_outfit" field of your JSON response
+4. The system will validate and apply the change
+
+WHEN THE PLAYER ASKS "what do you want to wear?" or "choose your outfit":
+1. The character chooses based on personality, affinity ({current_aff}), and context
+2. Higher affinity = more daring choices (lingerie, nude)
+3. Lower affinity = conservative (uniform, casual)
+4. Set the chosen outfit in "current_outfit" field
+
+IMPORTANT: Always describe the outfit the character is ACTUALLY wearing in visual_en!
+
+"""
+        
         npc_instructions = ""
         for npc_name in self.world_data.get("companions", {}).keys():
             if npc_name != char_name:
@@ -880,9 +919,9 @@ Background: {pc_identity.get('background', 'New student')}
 
             if visual_path.exists():
                 visual_guide = visual_path.read_text(encoding="utf-8")
-                full_prompt = nsfw_header + player_context + main_prompt + "\n\n" + visual_guide
+                full_prompt = nsfw_header + player_context + main_prompt + outfit_instructions + "\n\n" + visual_guide
             else:
-                full_prompt = nsfw_header + player_context + main_prompt
+                full_prompt = nsfw_header + player_context + main_prompt + outfit_instructions
 
             return full_prompt
 
@@ -998,11 +1037,20 @@ RULES:
         if proposed.current_outfit:
             # Check if outfit exists in wardrobe for this character
             char_config = self.world_data.get("companions", {}).get(current_companion)
+            is_valid_id = False
+
             if char_config and char_config.wardrobe:
-                if proposed.current_outfit in char_config.wardrobe:
-                    validated.current_outfit = proposed.current_outfit
-                else:
-                    print(f"[Validate] Rejected unknown outfit: {proposed.current_outfit}")
+                is_valid_id = proposed.current_outfit in char_config.wardrobe
+
+            # Allow if it's a valid ID OR a creative description (contains "wearing" or spaces)
+            is_creative_desc = "wearing " in proposed.current_outfit.lower() or " " in proposed.current_outfit
+
+            if is_valid_id or is_creative_desc:
+                validated.current_outfit = proposed.current_outfit
+                if not is_valid_id:
+                    print(f"[Validate] Creative outfit accepted: {proposed.current_outfit}")
+            else:
+                print(f"[Validate] Rejected unknown outfit ID: {proposed.current_outfit}")
 
         # 4. Validate Location/Time (must be from predefined set)
         if proposed.location:
@@ -1035,3 +1083,91 @@ RULES:
             validated.npc_updates = proposed.npc_updates
 
         return validated
+
+    def _select_outfit_for_character(self, char_name: str) -> str:
+        """Python seleziona l'outfit più appropriato per il personaggio.
+        
+        La scelta è basata su:
+        - Affinità (alta = outfit audaci, bassa = conservativi)
+        - Contesto (location, time)
+        - Disponibilità nel wardrobe
+        """
+        import random
+        
+        char_config = self.world_data.get("companions", {}).get(char_name)
+        if not char_config or not hasattr(char_config, 'wardrobe'):
+            return "default"
+        
+        wardrobe = char_config.wardrobe
+        available_outfits = list(wardrobe.keys())
+        
+        if not available_outfits:
+            return "default"
+        
+        affinity = self.state.current.affinity.get(char_name, 0)
+        location = self.state.current.location
+        time_of_day = self.state.current.time_of_day
+        
+        # Categorie di outfit per tipo
+        conservative = ["teacher_suit", "uniform_mod", "cleaning_uniform", 
+                       "strict_teacher", "casual_teacher", "casual", "apron"]
+        casual = ["casual_teacher", "casual", "private_tutoring", 
+                 "cheerleader", "pajamas"]
+        daring = ["swimsuit", "beach_teacher", "prom_dress", "night_robe", 
+                 "gym_teacher", "lingerie"]
+        explicit = ["nude", "lingerie"]
+        
+        # Filtro outfit disponibili per categoria
+        available_conservative = [o for o in conservative if o in available_outfits]
+        available_casual = [o for o in casual if o in available_outfits]
+        available_daring = [o for o in daring if o in available_outfits]
+        available_explicit = [o for o in explicit if o in available_outfits]
+        
+        # Logica di selezione basata su affinità
+        if affinity >= 75:
+            # Alta affinità: 40% audace, 30% explicit, 20% casual, 10% conservativo
+            candidates = (available_daring * 4) + (available_explicit * 3) + \
+                        (available_casual * 2) + available_conservative
+        elif affinity >= 50:
+            # Media-alta: 30% audace, 40% casual, 20% conservativo, 10% explicit
+            candidates = (available_daring * 3) + (available_casual * 4) + \
+                        (available_conservative * 2) + available_explicit
+        elif affinity >= 25:
+            # Media: 20% audace, 50% casual, 30% conservativo
+            candidates = (available_daring * 2) + (available_casual * 5) + \
+                        (available_conservative * 3)
+        else:
+            # Bassa affinità: 10% casual, 70% conservativo, 20% default/current
+            candidates = available_casual + (available_conservative * 7)
+        
+        # Contesto-specific boost
+        context_boost = []
+        if "gym" in location.lower() or "palestra" in location.lower():
+            context_boost = [o for o in ["gym_teacher"] if o in available_outfits]
+        elif "beach" in location.lower() or "spiaggia" in location.lower():
+            context_boost = [o for o in ["swimsuit", "beach_teacher"] if o in available_outfits]
+        elif "bed" in location.lower() or "bedroom" in location.lower() or "camera" in location.lower():
+            context_boost = [o for o in ["pajamas", "night_robe", "lingerie"] if o in available_outfits]
+        elif time_of_day == "Night":
+            context_boost = [o for o in ["night_robe", "pajamas", "lingerie"] if o in available_outfits]
+        
+        # Aggiungi context boost con peso maggiore
+        candidates = context_boost * 3 + candidates
+        
+        # Se non ci sono candidati, usa tutti gli outfit disponibili
+        if not candidates:
+            candidates = available_outfits
+        
+        # Rimuovi duplicati mantenendo ordine
+        seen = set()
+        unique_candidates = []
+        for o in candidates:
+            if o not in seen:
+                seen.add(o)
+                unique_candidates.append(o)
+        
+        # Scegli random tra i candidati
+        chosen = random.choice(unique_candidates)
+        
+        print(f"[OutfitSelect] {char_name} (affinity={affinity}, loc={location}) -> {chosen}")
+        return chosen

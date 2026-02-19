@@ -1,7 +1,7 @@
 {
   "1": {
     "inputs": {
-      "unet_name": "Wan2.1_I2V_14B_fp8.gguf"
+      "unet_name": "Wan2.1_I2V_fp8_Civitai.gguf"
     },
     "class_type": "UnetLoaderGGUF",
     "_meta": {
@@ -30,7 +30,7 @@
   },
   "5": {
     "inputs": {
-      "text": "Cinematic photorealistic video, a beautiful woman walking towards a plush bed and sitting on the edge. She gracefully reaches down, grabbing the waistband of her denim shorts and slowly sliding them down her legs until they are removed. Focus on the realistic movement of the fabric, natural skin textures, soft bedroom lighting, 8k, masterpiece, highly detailed, seamless transitions, intimate atmosphere.",
+      "text": "Cinematic photorealistic video, a beautiful blonde woman standing in a softly lit bedroom. She is slowly sliding down her denim shorts, detailed fabric physics, realistic cloth deformation, natural skin texture, smooth motion, intimate atmosphere, 8k, masterpiece, highly detailed, soft focus background.",
       "clip": [
         "3",
         0
@@ -43,7 +43,7 @@
   },
   "6": {
     "inputs": {
-      "image": "Immagine 2024-05-18 004009.png"
+      "image": "IMG-20230718-WA0019.jpg"
     },
     "class_type": "LoadImage",
     "_meta": {
@@ -82,40 +82,10 @@
       "title": "WanImageToVideo"
     }
   },
-  "8": {
-    "inputs": {
-      "seed": 485445102640526,
-      "steps": 4,
-      "cfg": 0.9,
-      "sampler_name": "uni_pc",
-      "scheduler": "beta",
-      "denoise": 1,
-      "model": [
-        "17",
-        0
-      ],
-      "positive": [
-        "7",
-        0
-      ],
-      "negative": [
-        "7",
-        1
-      ],
-      "latent_image": [
-        "7",
-        2
-      ]
-    },
-    "class_type": "KSampler",
-    "_meta": {
-      "title": "KSampler"
-    }
-  },
   "9": {
     "inputs": {
       "samples": [
-        "8",
+        "19",
         0
       ],
       "vae": [
@@ -193,7 +163,7 @@
     "inputs": {
       "width": 480,
       "height": 892,
-      "upscale_method": "nearest-exact",
+      "upscale_method": "bicubic",
       "keep_proportion": "resize",
       "pad_color": "0, 0, 0",
       "crop_position": "center",
@@ -214,13 +184,13 @@
       "lora_name": "wan2.2/lightx2v-i2v/Wan_2_2_I2V_A14B_HIGH_lightx2v_MoE_distill_lora_rank_64_bf16.safetensors",
       "strength_model": 1,
       "model": [
-        "1",
+        "20",
         0
       ]
     },
     "class_type": "LoraLoaderModelOnly",
     "_meta": {
-      "title": "Load LoRA"
+      "title": "Load LoRA HIGH"
     }
   },
   "17": {
@@ -228,13 +198,92 @@
       "lora_name": "wan2.2/lightx2v-i2v/Wan2.2-Lightning_I2V-A14B-4steps-lora_LOW_fp16.safetensors",
       "strength_model": 1,
       "model": [
-        "16",
+        "20",
         0
       ]
     },
     "class_type": "LoraLoaderModelOnly",
     "_meta": {
-      "title": "Load LoRA"
+      "title": "Load LoRA LOW"
+    }
+  },
+  "18": {
+    "inputs": {
+      "add_noise": "enable",
+      "noise_seed": 267621498594951,
+      "steps": 4,
+      "cfg": 1,
+      "sampler_name": "uni_pc",
+      "scheduler": "beta",
+      "start_at_step": 0,
+      "end_at_step": 1,
+      "return_with_leftover_noise": "enable",
+      "model": [
+        "16",
+        0
+      ],
+      "positive": [
+        "7",
+        0
+      ],
+      "negative": [
+        "7",
+        1
+      ],
+      "latent_image": [
+        "7",
+        2
+      ]
+    },
+    "class_type": "KSamplerAdvanced",
+    "_meta": {
+      "title": "KSampler (Advanced)"
+    }
+  },
+  "19": {
+    "inputs": {
+      "add_noise": "disable",
+      "noise_seed": 567709502384961,
+      "steps": 4,
+      "cfg": 1,
+      "sampler_name": "uni_pc",
+      "scheduler": "beta",
+      "start_at_step": 1,
+      "end_at_step": 4,
+      "return_with_leftover_noise": "disable",
+      "model": [
+        "17",
+        0
+      ],
+      "positive": [
+        "7",
+        0
+      ],
+      "negative": [
+        "7",
+        1
+      ],
+      "latent_image": [
+        "18",
+        0
+      ]
+    },
+    "class_type": "KSamplerAdvanced",
+    "_meta": {
+      "title": "KSampler (Advanced)"
+    }
+  },
+  "20": {
+    "inputs": {
+      "shift": 8,
+      "model": [
+        "1",
+        0
+      ]
+    },
+    "class_type": "ModelSamplingSD3",
+    "_meta": {
+      "title": "ModelSamplingSD3"
     }
   }
 }

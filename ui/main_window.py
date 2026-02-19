@@ -1264,8 +1264,114 @@ class MainWindow(QMainWindow):
 
     @asyncSlot()
     async def _on_load(self):
-        """Carica partita (placeholder)."""
-        QMessageBox.information(self, "Load", "Load game - work in progress")
+        """Carica partita esistente dal database."""
+        from ui.startup_dialog import LoadGameDialog
+        from core.database import SessionModel
+        from sqlalchemy import select, desc
+        
+        # Carica lista salvataggi prima di mostrare il dialog
+        try:
+            async with db_manager.get_session() as db:
+                result = await db.execute(
+                    select(SessionModel).order_by(desc(SessionModel.updated_at))
+                )
+                saves = list(result.scalars().all())
+                print(f"[Load] Found {len(saves)} saves in database")
+                for s in saves:
+                    print(f"  - ID {s.id}: {s.companion_name} in {s.world_id} (turn {s.turn_count})")
+        except Exception as e:
+            QMessageBox.critical(self, "Error", f"Failed to load saves list:\n{e}")
+            import traceback
+            traceback.print_exc()
+            return
+        
+        if not saves:
+            QMessageBox.information(self, "Load Game", "Nessuna partita salvata trovata nel database.")
+            return
+        
+        dialog = LoadGameDialog(self, saves=saves)
+        if dialog.exec() != QDialog.Accepted:
+            return
+        
+        session_id = dialog.get_selected_session_id()
+        if not session_id:
+            return
+        
+        # Conferma prima di caricare
+        reply = QMessageBox.question(
+            self,
+            "Carica Partita",
+            "Sei sicuro di voler caricare questa partita?\n"
+            "La partita corrente sarà salvata automaticamente.",
+            QMessageBox.Yes | QMessageBox.No
+        )
+        
+        if reply != QMessageBox.Yes:
+            return
+        
+        self.lbl_status.setText("[LOAD] Loading...")
+        self.input_field.setEnabled(False)
+        
+        try:
+            async with db_manager.get_session() as db:
+                # Salva stato corrente prima di caricare
+                if self.engine.state:
+                    await self.engine.state.save_manual(db, "auto_before_load")
+                
+                # Carica nuova partita
+                session = await self.engine.load_game(db, session_id)
+                
+                if not session:
+                    QMessageBox.critical(self, "Error", "Failed to load saved game.")
+                    self.lbl_status.setText("[ERR] Load failed")
+                    self.input_field.setEnabled(True)
+                    return
+            
+            # Reset UI per nuova partita
+            self.story_edit.clear()
+            self.image_history.clear()
+            self.current_image = None
+            self.image_label.setText("Waiting for scene...")
+            self.image_label.setPixmap(QPixmap())
+            self.combo_videos.clear()
+            
+            # Setup UI Quest per nuova partita
+            self._setup_quest_ui()
+            self._update_status()
+            
+            # Log
+            if self.session_logger:
+                world_name = self.engine.world_data.get('meta', {}).get('name', 'Unknown')
+                char_name = self.engine.state.current.companion_name
+                self.session_logger.log_event("GAME", f"=== CARICATA PARTITA {session_id} ===")
+                self.session_logger.log_event("GAME", f"Mondo: {world_name}")
+                self.session_logger.log_event("GAME", f"Personaggio: {char_name}")
+            
+            # Messaggio conferma
+            self._append_story(
+                f"<div style='background: #1a3a1a; padding: 10px; border-left: 3px solid #4CAF50;'>"
+                f"<b>📂 Partita Caricata!</b><br>"
+                f"Personaggio: {session.companion_name}<br>"
+                f"Turno: {session.turn_count}<br>"
+                f"Location: {session.location}</div>"
+            )
+            
+            self.lbl_status.setText("[LOAD] Ready!")
+            
+            # Genera intro per la scena caricata
+            await self._process_turn(
+                "[SYSTEM]: The player has loaded a saved game. "
+                "Describe the current scene briefly.",
+                is_intro=True
+            )
+            
+        except Exception as e:
+            QMessageBox.critical(self, "Error", f"Failed to load game:\n{e}")
+            self.lbl_status.setText(f"[ERR] Load failed")
+            import traceback
+            traceback.print_exc()
+        finally:
+            self.input_field.setEnabled(True)
 
     def resizeEvent(self, event):
         """Ridisegna immagine quando resize."""

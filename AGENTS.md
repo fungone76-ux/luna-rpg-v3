@@ -462,6 +462,8 @@ for m in milestones:
 │     ↓                                                       │
 │  _build_system_prompt_with_quest_context()                  │
 │     ↓                                                       │
+│  WardrobeEngine.get_outfit() → Lista sicura vs Creativa     │
+│     ↓                                                       │
 │  llm.generate_response() → JSON                             │
 │     ↓                                                       │
 │  memory.add_message()                                       │
@@ -470,7 +472,7 @@ for m in milestones:
 │     ↓                                                       │
 │  Salva quest states nel DB                                  │
 │     ↓                                                       │
-│  _generate_image()                                          │
+│  _generate_image() (con prompt ibrido)                      │
 │     ↓                                                       │
 │  _update_quest_ui() → aggiorna UI                           │
 │     ↓                                                       │
@@ -482,8 +484,48 @@ for m in milestones:
 
 ---
 
-## 🎮 Feature Complete List v3.2
+## 👔 Wardrobe System "Hybrid Creative" (NUOVO - Feb 2026)
 
+**Problema:** Volevamo sia la qualità curata dei prompt predefiniti (v3) sia la libertà creativa dell'LLM di inventare outfit al volo (v2).
+
+**Soluzione:** Un sistema ibrido che supporta entrambi.
+
+### 1. YAML Configuration (Modalità Sicura)
+Gli outfit definiti nel YAML sono la "base solida". L'LLM li usa per la coerenza quotidiana.
+
+```yaml
+wardrobe:
+  executive_suit:
+    sd_prompt: "wearing black pencil skirt, white blouse..."
+    description: "Tailleur formale."
+  gym_wear:
+    sd_prompt: "wearing tight yoga pants..."
+```
+
+### 2. LLM Creative Mode (Modalità Libera)
+Se l'LLM inventa un outfit che NON è nel YAML, il sistema lo accetta come **descrizione visiva diretta**.
+
+**Esempio LLM JSON:**
+```json
+{
+  "current_outfit": "wearing red latex catsuit, shiny, zipper",
+  "text": "Luna sorride maliziosa..."
+}
+```
+
+**Logica Engine (`core/prompt_builders/base.py`):**
+1. Cerca "wearing red latex..." nel YAML -> Non trovato.
+2. Assume sia una descrizione creativa -> Passa la stringa direttamente a ComfyUI.
+3. Risultato: Luna indossa la tutina rossa inventata dall'LLM!
+
+**System Prompt Instruction:**
+> "If the user asks for a specific outfit NOT in the list, YOU CAN INVENT IT. Output a full visual description string in `current_outfit` instead of an ID."
+
+---
+
+## 🎮 Feature Complete List v3.3
+
+- ✅ **Wardrobe Hybrid System** (Safe List + Creative Freedom)
 - ✅ Predictive Scene Analysis
 - ✅ Multi-provider LLM (Moonshot + Gemini)
 - ✅ JSON mode

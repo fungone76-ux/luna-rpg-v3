@@ -98,7 +98,8 @@ class ComfyImageClient:
                 "class_type": "LoraLoader"
             }
             
-            # Cambia scheduler a karras
+            # Cambia sampler a euler e scheduler a karras
+            workflow["5"]["inputs"]["sampler_name"] = "euler"
             workflow["6"]["inputs"]["scheduler"] = "karras"
             
             # Riconnetti tutto al nodo 24 (ultimo LoRA)

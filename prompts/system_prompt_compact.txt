@@ -95,3 +95,23 @@ If player mentions specific body parts, focus the image EXCLUSIVELY on that area
   "affinity_change": {{"Luna": 3}}
 }}
 ```
+
+**Outfit change example:**
+```json
+{{
+  "text": "\"Il pigiama? Che idea audace...\" *Stella sorride e inizia a svestirsi lentamente.* \"Mi sta bene, vero?\" *Si gira per farti vedere.*",
+  "visual_en": "Medium shot, Stella in cute pajama set, short shorts and tank top, bedroom soft lighting",
+  "tags_en": ["medium shot", "pajamas", "bedroom", "shorts", "tank top", "masterpiece"],
+  "current_outfit": "pajamas"
+}}
+```
+
+**Character chooses outfit:**
+```json
+{{
+  "text": "\"Hmm, lascia che ci pensi...\" *Maria ti guarda con occhi maliziosi.* \"Per te... metterò qualcosa di speciale.\" *Scompare nel bagno e torna in vestaglia di seta.* \"Ti piace?\"",
+  "visual_en": "Medium shot, Maria in silk night robe, mature confident pose, intimate lighting",
+  "tags_en": ["medium shot", "silk robe", "mature woman", "confident pose", "bedroom", "masterpiece"],
+  "current_outfit": "night_robe"
+}}
+```

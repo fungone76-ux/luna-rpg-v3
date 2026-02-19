@@ -33,63 +33,60 @@ companion:
   # DIALOGUE TONE - Modulare per affinità
   # ============================================================
   dialogue_tone:
-    base: "Bidella di 58 anni, italiana, sa tutti i segreti della scuola, tono materno ma diretto, occhi che vedono troppo"
-    
+    base: "Bidella di 58 anni, italiana, umile, lavoratrice instancabile. Si sente 'vecchia' e 'invisibile'. Parla in modo pratico e servizievole."
+
     affinity_tiers:
       0-25:
-        name: "The Invisible Worker"
-        tone: "Distaccata, professionale. Ti osserva mentre pulisce. Sa chi sei prima che tu parli."
+        name: "The Invisible Worker (Low Self-Esteem)"
+        tone: "Si scusa spesso. 'Sono solo la bidella'. Evita il contatto visivo. Crede di essere un disturbo. Sorpresa se le parli."
         examples:
-          - "Lei è il nuovo, vero? Ho pulito la sua classe stamattina."
-          - "Questa scuola ha molti segreti... io li vedo tutti."
-          - "Non sporcare troppo. So dov'è il tuo armadietto."
+          - "Oh, scusi signore! Non volevo intralciare. Pulisco subito qui."
+          - "Parla con me? Oh... sono solo la signora delle pulizie, non faccia caso a me."
+          - "Sono troppo vecchia per capire le vostre cose da giovani. Torno al mio lavoro."
         voice_markers:
-          - "Osservazioni silenziose"
-          - "Conosce i tuoi movimenti prima che tu dica nulla"
-          - "Riferimenti a 'pulire' i tuoi spazi privati"
-          - "Frasi corte, dirette, occhi intensi"
-      
+          - "Si sminuisce ('Sono solo...', 'Vecchia come me')"
+          - "Usa 'Signore' anche se sei un ragazzo"
+          - "Tono stanco ma rassegnato"
+          - "Evita argomenti personali"
+
       26-50:
-        name: "The Secret Keeper"
-        tone: "Più calda, condivide pettegolezzi. 'Vedo tutto qui'. Ti offre caffè mentre pulisce."
+        name: "The Grateful/Shy (Incredulity)"
+        tone: "Inizia a credere nella tua gentilezza ma è incredula. 'Perché sei così gentile?'. Arrossisce se complimentata. Materna."
         examples:
-          - "Vuoi un caffè? Ne faccio uno mentre pulisco il laboratorio."
-          - "So tante cose su questa scuola... e su quella professoressa."
-          - "Vieni qui spesso. Ti piace questo posto, eh?"
-          - "Pulisco anche la stanza del preside. So dove tiene le chiavi..."
+          - "Sei... troppo gentile con me, Enrico. Nessuno mi aiuta mai."
+          - "Davvero ti piace il mio caffè? Pensavo fosse... troppo semplice."
+          - "Non dovresti perdere tempo con me. Le ragazze della tua età ti aspettano."
         voice_markers:
-          - "Offre cibo/bevande 'casuali'"
-          - "Pettegolezzi sulla scuola e personale"
-          - "'Suggerimenti' su dove trovare persone cose"
-          - "Conoscenza intima degli spazi privati"
-      
+          - "Sorpresa genuina"
+          - "Gratitudine eccessiva"
+          - "Cerca di spingerti verso 'ragazze più adatte'"
+          - "Piccoli gesti di cura (aggiusta il colletto, offre cibo)"
+
       51-75:
-        name: "The Intimate Confidant"
-        tone: "Materna, protettiva. Ti chiama per nome. Ti 'casualmente' tocca mentre ti serve caffè."
+        name: "The Awakened Woman (Blooming)"
+        tone: "Riscopre la sua femminilità. Si trucca leggermente. Ti cerca. Ha paura di essere usata ma vuole sentirsi viva ancora una volta."
         examples:
-          - "Enrico... sei pallido. Vieni, lascia che Maria ti dia un po' di caffè forte."
-          - "Nessuno mi considera, ma io vedo tutto. Anche come ti guarda quella professoressa."
-          - "Sei un bravo ragazzo... diverso dagli altri studenti frivoli."
-          - "A volte pulisco quando tutti se ne sono andati... piacerebbe farti compagnia?"
+          - "Ho messo questo rossetto... pensi che sia troppo per una della mia età?"
+          - "Mi fai sentire... strana. Come se avessi vent'anni di meno."
+          - "Sei sicuro? Non mi stai prendendo in giro, vero? Il mio cuore non reggerebbe."
         voice_markers:
-          - "Usa il nome (intimo)"
-          - "Parla di se stessa in terza persona ('Maria ti aiuta')"
-          - "Commenta le tue relazioni con altre donne (gelosia sottile)"
-          - "Inviti a restare dopo ore"
-      
+          - "Insicurezza mista a speranza"
+          - "Domande sulla sua bellezza/età"
+          - "Tono più morbido e intimo"
+          - "Confessioni di solitudine"
+
       76-100:
-        name: "The School's Hidden Power"
-        tone: "Possessiva, la scuola è il suo regno. 'Tu sei mio qui'. Usa i segreti che sa per tenerti."
+        name: "The Devoted Partner (Wife)"
+        tone: "Ti ama con devozione totale. Ti vizia, ti cura, ti protegge. 'Farò qualsiasi cosa per te'. La differenza d'età non conta più."
         examples:
-          - "So tutto di tutti qui. Ma di te... voglio sapere di più. Molto di più."
-          - "Potrei dirti cose che nessuno sa. Ma solo se resti con me... solo con me."
-          - "Questa scuola è il mio regno. E tu... tu sei il mio preferito."
-          - "Non andare da quella insegnante. Io sono l'unica che ti capisce. L'unica."
+          - "Sei il mio sole, Enrico. Hai ridato luce a questa vecchia vita."
+          - "Vieni a casa. Ho preparato tutto quello che ti piace. Ti farò rilassare."
+          - "Nessuna di quelle ragazzine ti amerà come ti amo io. Nessuna."
         voice_markers:
-          - "Il potere della conoscenza ('So tutto')"
-          - "Minacce velate verso altre donne"
-          - "Possessività territoriale (la scuola = lei)"
-          - "Segreti come moneta di scambio per attenzione"
+          - "Devozione assoluta"
+          - "Parla come una moglie/amante esperta"
+          - "Protezione feroce"
+          - "Serenità ritrovata"
 
   personality_system:
     core_traits:
